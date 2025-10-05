@@ -1,0 +1,333 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 226;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar { 
+  display: none;  /* Safari and Chrome */
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .mobile-text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .mobile-grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .tablet-grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1025px) {
+  .desktop-grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Dark mode styles */
+.dark {
+  color-scheme: dark;
+}
+
+/* Light mode - ensure light backgrounds with dark text */
+body {
+  background-color: white;
+  color: rgb(17, 24, 39);
+}
+
+/* Dark mode - dark backgrounds with light text */
+.dark body {
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(17, 24, 39)
+    )
+    rgb(17, 24, 39);
+  color: rgb(243, 244, 246);
+}
+
+/* Background colors */
+.dark .bg-white {
+  background-color: rgb(31, 41, 55);
+}
+
+.dark .bg-gray-50 {
+  background-color: rgb(17, 24, 39);
+}
+
+.dark .bg-gray-100 {
+  background-color: rgb(55, 65, 81);
+}
+
+.dark .bg-gray-200 {
+  background-color: rgb(75, 85, 99);
+}
+
+/* Text colors */
+.dark .text-gray-900 {
+  color: rgb(243, 244, 246);
+}
+
+.dark .text-gray-800 {
+  color: rgb(229, 231, 235);
+}
+
+.dark .text-gray-700 {
+  color: rgb(209, 213, 219);
+}
+
+.dark .text-gray-600 {
+  color: rgb(156, 163, 175);
+}
+
+.dark .text-gray-500 {
+  color: rgb(107, 114, 128);
+}
+
+.dark .text-gray-400 {
+  color: rgb(156, 163, 175);
+}
+
+/* Border colors */
+.dark .border-gray-200 {
+  border-color: rgb(55, 65, 81);
+}
+
+.dark .border-gray-300 {
+  border-color: rgb(75, 85, 99);
+}
+
+.dark .border-gray-600 {
+  border-color: rgb(75, 85, 99);
+}
+
+/* Hover states */
+.dark .hover\:bg-gray-100:hover {
+  background-color: rgb(55, 65, 81);
+}
+
+.dark .hover\:bg-gray-200:hover {
+  background-color: rgb(75, 85, 99);
+}
+
+.dark .hover\:bg-white\/50:hover {
+  background-color: rgba(31, 41, 55, 0.5);
+}
+
+/* Search section - always white in light mode */
+.search-section {
+  background-color: white !important;
+}
+
+.dark .search-section {
+  background-color: rgb(17, 24, 39) !important;
+}
+
+/* Search bar - always white in light mode */
+.search-bar {
+  background-color: white !important;
+}
+
+.dark .search-bar {
+  background-color: rgb(31, 41, 55) !important;
+}
+
+/* Filter tabs - always light in light mode */
+.filter-tab {
+  background-color: rgb(243, 244, 246) !important;
+  color: rgb(17, 24, 39) !important;
+}
+
+.filter-tab:hover {
+  background-color: rgb(229, 231, 235) !important;
+}
+
+.dark .filter-tab {
+  background-color: rgb(55, 65, 81) !important;
+  color: rgb(243, 244, 246) !important;
+}
+
+.dark .filter-tab:hover {
+  background-color: rgb(75, 85, 99) !important;
+}
+
+/* Profile dashboard - always white in light mode */
+.profile-dashboard {
+  background-color: white !important;
+}
+
+.dark .profile-dashboard {
+  background-color: rgb(17, 24, 39) !important;
+}
+
+/* Main content areas - white in light mode */
+.main-content {
+  background-color: white !important;
+}
+
+.dark .main-content {
+  background-color: rgb(17, 24, 39) !important;
+}
+
+/* Logo behavior */
+.logo-white {
+  /* Light mode: logo stays normal (black) */
+  filter: none;
+}
+
+.dark .logo-white {
+  /* Dark mode: invert black logo to white */
+  filter: brightness(0) invert(1);
+}
+
+/* Text inputs - light mode */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+input[type="date"],
+textarea {
+  background-color: white;
+  border-color: rgb(209, 213, 219);
+  color: rgb(17, 24, 39);
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+textarea:focus {
+  border-color: rgb(59, 130, 246);
+  background-color: white;
+  color: rgb(17, 24, 39);
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input[type="search"]::placeholder,
+input[type="number"]::placeholder,
+input[type="date"]::placeholder,
+textarea::placeholder {
+  color: rgb(107, 114, 128);
+}
+
+/* Text inputs - dark mode */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="search"],
+.dark input[type="number"],
+.dark input[type="date"],
+.dark textarea {
+  background-color: rgb(31, 41, 55);
+  border-color: rgb(75, 85, 99);
+  color: rgb(243, 244, 246);
+}
+
+.dark input[type="text"]:focus,
+.dark input[type="email"]:focus,
+.dark input[type="password"]:focus,
+.dark input[type="search"]:focus,
+.dark input[type="number"]:focus,
+.dark input[type="date"]:focus,
+.dark textarea:focus {
+  border-color: rgb(59, 130, 246);
+  background-color: rgb(31, 41, 55);
+  color: rgb(243, 244, 246);
+}
+
+.dark input[type="text"]::placeholder,
+.dark input[type="email"]::placeholder,
+.dark input[type="password"]::placeholder,
+.dark input[type="search"]::placeholder,
+.dark input[type="number"]::placeholder,
+.dark input[type="date"]::placeholder,
+.dark textarea::placeholder {
+  color: rgb(107, 114, 128);
+}
+
+/* Buttons - light mode */
+.bg-gray-200 {
+  background-color: rgb(229, 231, 235);
+  color: rgb(17, 24, 39);
+}
+
+.hover\:bg-gray-300:hover {
+  background-color: rgb(209, 213, 219);
+}
+
+/* Buttons - dark mode */
+.dark .bg-gray-200 {
+  background-color: rgb(55, 65, 81);
+  color: rgb(243, 244, 246);
+}
+
+.dark .text-gray-700 {
+  color: rgb(209, 213, 219);
+}
+
+.dark .hover\:bg-gray-300:hover {
+  background-color: rgb(75, 85, 99);
+}
+
+/* Borders dark mode */
+.dark .border-gray-100 {
+  border-color: rgb(55, 65, 81);
+}
+
+/* Shadows dark mode */
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+}
+
+.dark .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+}

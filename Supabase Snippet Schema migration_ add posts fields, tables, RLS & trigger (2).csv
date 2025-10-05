@@ -1,0 +1,134 @@
+schemaname,tablename,policyname,permissive,roles,cmd,qual
+public,collection_items,Collection items are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,collection_items,Users can manage their own collection items,PERMISSIVE,{public},ALL,"(auth.uid() = ( SELECT profile_collections.profile_id
+   FROM profile_collections
+  WHERE (profile_collections.id = collection_items.collection_id)))"
+public,comments,Authenticated users can create comments,PERMISSIVE,{public},INSERT,null
+public,comments,Comments are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,comments,Comments delete own,PERMISSIVE,{public},DELETE,(auth.uid() = user_id)
+public,comments,Comments insert own,PERMISSIVE,{public},INSERT,null
+public,comments,Comments read,PERMISSIVE,{public},SELECT,true
+public,comments,Users can manage their own comments,PERMISSIVE,{public},ALL,(auth.uid() = user_id)
+public,communities,Community creators can manage their communities,PERMISSIVE,{public},ALL,(auth.uid() = created_by)
+public,communities,Public communities are viewable by everyone,PERMISSIVE,{public},SELECT,(is_public = true)
+public,community_members,Community memberships are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,community_members,Users can join communities,PERMISSIVE,{public},INSERT,null
+public,community_members,Users can leave communities,PERMISSIVE,{public},DELETE,(auth.uid() = user_id)
+public,community_posts,Community members can create posts,PERMISSIVE,{public},INSERT,null
+public,community_posts,Community posts are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,companies,Authenticated users can create companies,PERMISSIVE,{public},INSERT,null
+public,companies,Companies are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,content_safety_checks,Authenticated users can view safety checks,PERMISSIVE,{public},ALL,(auth.uid() IS NOT NULL)
+public,content_tags,Authenticated users can create tags,PERMISSIVE,{public},INSERT,null
+public,content_tags,Content tags are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,follows,Authenticated users can manage follows,PERMISSIVE,{public},ALL,(auth.uid() = follower_id)
+public,follows,Follows are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,groups,Anyone can view groups,PERMISSIVE,{public},SELECT,true
+public,groups,Authenticated users can create groups,PERMISSIVE,{public},INSERT,null
+public,likes,Authenticated users can manage likes,PERMISSIVE,{public},ALL,(auth.uid() = user_id)
+public,likes,Likes are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,media_files,Media files are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,media_files,Users can manage their own media files,PERMISSIVE,{public},ALL,"(auth.uid() = ( SELECT posts.user_id
+   FROM posts
+  WHERE (posts.id = media_files.post_id)))"
+public,messages,Users can create messages,PERMISSIVE,{public},INSERT,null
+public,messages,Users can view their own messages,PERMISSIVE,{public},SELECT,((auth.uid() = sender_id) OR (auth.uid() = recipient_id))
+public,notifications,Notifications read own,PERMISSIVE,{public},SELECT,(auth.uid() = user_id)
+public,notifications,Notifications write server or self,PERMISSIVE,{public},INSERT,null
+public,notifications,Users can manage their own notifications,PERMISSIVE,{public},ALL,(auth.uid() = user_id)
+public,notifications,Users can view their own notifications,PERMISSIVE,{public},SELECT,(auth.uid() = user_id)
+public,payment_intents,Users can create payment intents,PERMISSIVE,{public},INSERT,null
+public,payment_intents,Users can update their own payment intents,PERMISSIVE,{public},UPDATE,(user_id = auth.uid())
+public,payment_intents,Users can view their own payment intents,PERMISSIVE,{public},SELECT,(user_id = auth.uid())
+public,payment_methods,Users can manage their own payment methods,PERMISSIVE,{public},ALL,(user_id = auth.uid())
+public,payment_methods,Users can view their own payment methods,PERMISSIVE,{public},SELECT,(user_id = auth.uid())
+public,popular_content_types,Popular content types are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,popular_tags,Popular tags are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,portfolio_files,Users can delete their own portfolio files,PERMISSIVE,{public},DELETE,(auth.uid() = user_id)
+public,portfolio_files,Users can insert their own portfolio files,PERMISSIVE,{public},INSERT,null
+public,portfolio_files,Users can update their own portfolio files,PERMISSIVE,{public},UPDATE,(auth.uid() = user_id)
+public,portfolio_files,Users can view their own portfolio files,PERMISSIVE,{public},SELECT,(auth.uid() = user_id)
+public,post_comments,Post comments are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,post_comments,Users can manage their own comments,PERMISSIVE,{public},ALL,(user_id = auth.uid())
+public,post_interactions,Post interactions are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,post_interactions,Users can manage their own interactions,PERMISSIVE,{public},ALL,(user_id = auth.uid())
+public,post_media,Anyone can view post media,PERMISSIVE,{public},SELECT,true
+public,post_media,Post media is viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,post_media,Users can insert post media,PERMISSIVE,{public},INSERT,null
+public,post_media,Users can manage their own post media,PERMISSIVE,{public},ALL,"(EXISTS ( SELECT 1
+   FROM posts
+  WHERE ((posts.id = post_media.post_id) AND (posts.user_id = auth.uid()))))"
+public,post_tags,Post tags are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,post_tags,Users can manage their own post tags,PERMISSIVE,{public},ALL,"(EXISTS ( SELECT 1
+   FROM posts
+  WHERE ((posts.id = post_tags.post_id) AND (posts.user_id = auth.uid()))))"
+public,posts,Anyone can view published posts,PERMISSIVE,{public},SELECT,(is_published = true)
+public,posts,Authenticated users can create posts,PERMISSIVE,{public},INSERT,null
+public,posts,Posts are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,posts,Posts delete own,PERMISSIVE,{public},DELETE,(auth.uid() = user_id)
+public,posts,Posts insert own,PERMISSIVE,{public},INSERT,null
+public,posts,Posts read,PERMISSIVE,{public},SELECT,true
+public,posts,Posts update own,PERMISSIVE,{public},UPDATE,(auth.uid() = user_id)
+public,posts,Users can create posts,PERMISSIVE,{public},INSERT,null
+public,posts,Users can delete their own posts,PERMISSIVE,{public},DELETE,(auth.uid() = user_id)
+public,posts,Users can update their own posts,PERMISSIVE,{public},UPDATE,(auth.uid() = user_id)
+public,posts,Users can view their own posts,PERMISSIVE,{public},SELECT,(auth.uid() = user_id)
+public,profile_achievements,Profile achievements are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,profile_achievements,Users can manage their own achievements,PERMISSIVE,{public},ALL,(auth.uid() = profile_id)
+public,profile_collections,Profile collections are viewable by everyone,PERMISSIVE,{public},SELECT,(is_public = true)
+public,profile_collections,Users can manage their own collections,PERMISSIVE,{public},ALL,(auth.uid() = profile_id)
+public,profile_highlights,Profile highlights are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,profile_highlights,Users can manage their own profile highlights,PERMISSIVE,{public},ALL,(auth.uid() = profile_id)
+public,profile_links,Profile links are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,profile_links,Users can manage their own profile links,PERMISSIVE,{public},ALL,(auth.uid() = profile_id)
+public,profile_notification_settings,Users can manage their own notification settings,PERMISSIVE,{public},ALL,(auth.uid() = profile_id)
+public,profile_sections,Profile sections are viewable by everyone,PERMISSIVE,{public},SELECT,(is_public = true)
+public,profile_sections,Users can manage their own profile sections,PERMISSIVE,{public},ALL,(auth.uid() = profile_id)
+public,profile_stats,Profile stats are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,profile_stats,Users can manage their own profile stats,PERMISSIVE,{public},ALL,(auth.uid() = profile_id)
+public,profile_testimonials,Profile testimonials are viewable by everyone,PERMISSIVE,{public},SELECT,(is_public = true)
+public,profile_testimonials,Users can manage their own testimonials,PERMISSIVE,{public},ALL,(auth.uid() = profile_id)
+public,profiles,Profiles are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,profiles,Profiles read,PERMISSIVE,{public},SELECT,true
+public,profiles,Profiles self update,PERMISSIVE,{public},UPDATE,(auth.uid() = id)
+public,profiles,Profiles self write,PERMISSIVE,{public},INSERT,null
+public,profiles,Users can insert their own profile,PERMISSIVE,{public},INSERT,null
+public,profiles,Users can update their own profile,PERMISSIVE,{public},UPDATE,(auth.uid() = id)
+public,profiles,Users can view all profiles,PERMISSIVE,{public},SELECT,true
+public,safety_keywords,Authenticated users can manage safety keywords,PERMISSIVE,{public},ALL,(auth.uid() IS NOT NULL)
+public,safety_moderation_queue,Authenticated users can view moderation queue,PERMISSIVE,{public},ALL,(auth.uid() IS NOT NULL)
+public,safety_rules,Authenticated users can manage safety rules,PERMISSIVE,{public},ALL,(auth.uid() IS NOT NULL)
+public,saved_posts,Users can delete their own saved posts,PERMISSIVE,{public},DELETE,(auth.uid() = user_id)
+public,saved_posts,Users can insert their own saved posts,PERMISSIVE,{public},INSERT,null
+public,saved_posts,Users can view their own saved posts,PERMISSIVE,{public},SELECT,(auth.uid() = user_id)
+public,saves,Saves read own,PERMISSIVE,{public},SELECT,(auth.uid() = user_id)
+public,saves,Saves write own,PERMISSIVE,{public},ALL,(auth.uid() = user_id)
+public,saves,Users can manage their own saves,PERMISSIVE,{public},ALL,(auth.uid() = user_id)
+public,saves,Users can view their own saves,PERMISSIVE,{public},SELECT,(auth.uid() = user_id)
+public,stripe_accounts,Users can manage their own stripe accounts,PERMISSIVE,{public},ALL,(user_id = auth.uid())
+public,stripe_accounts,Users can view their own stripe accounts,PERMISSIVE,{public},SELECT,(user_id = auth.uid())
+public,stripe_prices,Prices are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,stripe_products,Products are viewable by everyone,PERMISSIVE,{public},SELECT,true
+public,stripe_subscriptions,Users can manage their own subscriptions,PERMISSIVE,{public},ALL,(user_id = auth.uid())
+public,stripe_subscriptions,Users can view their own subscriptions,PERMISSIVE,{public},SELECT,(user_id = auth.uid())
+public,stripe_verification_sessions,Users can manage their own verification sessions,PERMISSIVE,{public},ALL,(user_id = auth.uid())
+public,stripe_verification_sessions,Users can view their own verification sessions,PERMISSIVE,{public},SELECT,(user_id = auth.uid())
+public,stripe_webhook_events,Webhook events are viewable by authenticated users,PERMISSIVE,{public},SELECT,(auth.uid() IS NOT NULL)
+public,subscriptions,Users can manage their own subscriptions,PERMISSIVE,{public},ALL,((auth.uid() = subscriber_id) OR (auth.uid() = creator_id))
+public,subscriptions,Users can view their own subscriptions,PERMISSIVE,{public},SELECT,((auth.uid() = subscriber_id) OR (auth.uid() = creator_id))
+public,transactions,Users can create transactions,PERMISSIVE,{public},INSERT,null
+public,transactions,Users can view their own transactions,PERMISSIVE,{public},SELECT,((auth.uid() = buyer_id) OR (auth.uid() = seller_id))
+public,user_analytics,Anyone can insert analytics,PERMISSIVE,{public},INSERT,null
+public,user_analytics,Users can view their own analytics,PERMISSIVE,{public},SELECT,(auth.uid() = user_id)
+public,user_groups,Users can join groups,PERMISSIVE,{public},INSERT,null
+public,user_groups,Users can leave groups,PERMISSIVE,{public},DELETE,(auth.uid() = user_id)
+public,user_groups,Users can view their own group memberships,PERMISSIVE,{public},SELECT,(auth.uid() = user_id)
+public,user_safety_violations,Authenticated users can view violations,PERMISSIVE,{public},ALL,(auth.uid() IS NOT NULL)
+public,user_safety_violations,Users can view their own violations,PERMISSIVE,{public},SELECT,(auth.uid() = user_id)
+storage,objects,Authenticated users can upload 1ps738_0,PERMISSIVE,{authenticated},INSERT,null
+storage,objects,Public read access 1ps738_0,PERMISSIVE,{anon},SELECT,((bucket_id = 'media'::text) AND (storage.extension(name) = 'jpg'::text) AND (lower((storage.foldername(name))[1]) = 'public'::text) AND (auth.role() = 'anon'::text))
+storage,objects,Public read post-media,PERMISSIVE,{public},SELECT,(bucket_id = 'post-media'::text)
+storage,objects,User can insert to post-media,PERMISSIVE,{public},INSERT,null
+storage,objects,User manage own files,PERMISSIVE,{public},ALL,((bucket_id = 'post-media'::text) AND (owner = auth.uid()))
+storage,objects,Users can delete their own files 1ps738_0,PERMISSIVE,{authenticated},DELETE,((bucket_id = 'media'::text) AND (storage.extension(name) = 'jpg'::text) AND (lower((storage.foldername(name))[1]) = 'public'::text) AND (auth.role() = 'anon'::text))
+storage,objects,Users can update their own files 1ps738_0,PERMISSIVE,{authenticated},UPDATE,((bucket_id = 'media'::text) AND (storage.extension(name) = 'jpg'::text) AND (lower((storage.foldername(name))[1]) = 'public'::text) AND (auth.role() = 'anon'::text))

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="240" viewBox="0 0 720 240" role="img" aria-label="Pan logo">
+  <rect width="100%" height="100%" fill="transparent"/>
+  <g fill="#000" transform="translate(40,30)">
+    <text x="0" y="120" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-size="120" font-weight="700" letter-spacing="-2">pan</text>
+    <circle cx="330" cy="78" r="10"/>
+    <!-- Simple abstract mark on the right -->
+    <g transform="translate(470,10)">
+      <circle cx="80" cy="120" r="60" fill="none" stroke="#000" stroke-width="28"/>
+      <path d="M132 36a24 24 0 1 1 0 48" fill="none" stroke="#000" stroke-linecap="round" stroke-width="28"/>
+      <path d="M86 198a24 24 0 1 1 0 48" fill="none" stroke="#000" stroke-linecap="round" stroke-width="28"/>
+    </g>
+  </g>
+</svg>
+
+

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debug Test</title>
+</head>
+<body>
+    <div id="root">
+        <h1>React Not Loading</h1>
+        <p>If you see this text, React is not working.</p>
+    </div>
+    <script>
+        console.log('HTML loaded');
+        // Simple test to see if JavaScript is working
+        document.getElementById('root').innerHTML = '<h1 style="color: red;">JavaScript is working!</h1>';
+    </script>
+</body>
+</html>
