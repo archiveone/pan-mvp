@@ -13,7 +13,7 @@ const PaymentPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'link'>('card');
   
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const { posts } = usePosts();
   const navigate = useNavigate();
 

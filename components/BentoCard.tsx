@@ -8,7 +8,7 @@ const BentoCard: React.FC<{ post: Post }> = ({ post }) => {
   const hasMedia = Boolean(post.imageUrl || post.videoUrl);
 
   return (
-    <Link to={href} className="block rounded-2xl overflow-hidden bg-gray-100 dark:bg-pan-gray-dark">
+    <Link to={href} className="block overflow-hidden bg-gray-100 dark:bg-pan-gray-dark">
       {hasMedia ? (
         post.videoUrl ? (
           <video src={post.videoUrl} className="w-full h-full object-cover" autoPlay loop muted playsInline />

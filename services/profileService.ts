@@ -15,8 +15,6 @@ export interface ProfileUpdateData {
   is_verified?: boolean
   verification_status?: string
   verification_level?: string
-  bio_safety_checked?: boolean
-  bio_is_safety_approved?: boolean
   bio_safety_score?: number
   hub_theme?: string
   hub_layout?: string
@@ -190,7 +188,7 @@ export class ProfileService {
         .from('profiles')
         .select('*')
         .eq('is_business', true)
-        .eq('bio_is_safety_approved', true)
+        .eq('is_verified', true)
         .order('created_at', { ascending: false })
         .limit(limit)
 
@@ -251,8 +249,6 @@ export class ProfileService {
   static async updateSafetyStatus(
     userId: string,
     safetyData: {
-      bio_safety_checked: boolean
-      bio_is_safety_approved: boolean
       bio_safety_score: number
       bio_safety_violations?: string[]
     }

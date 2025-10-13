@@ -1,19 +1,23 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, MoreHorizontal, Heart, MessageSquare, Share2, Bookmark, Edit, Trash2, ShieldAlert, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePosts } from '../contexts/PostsContext';
 import { useSavedPosts } from '../hooks/useSavedListings';
+import { toggleLike, recordShare, getEngagementStats } from '../services/engagementService';
+import { getCommentsWithReplies, createComment } from '../services/commentsService';
 import type { Post } from '../types';
 import CommentForm from '../components/CommentForm';
 import CommentThread from '../components/CommentThread';
 import Button from '../components/Button';
+import SaveToFolderButton from '../components/SaveToFolderButton';
+import PostPrivacyToggle from '../components/PostPrivacyToggle';
 
 const PostDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { posts, addPost, deletePost } = usePosts();
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const { isSaved, toggleSave } = useSavedPosts();
 
   const post = useMemo(() => posts.find(p => p.id === id), [posts, id]);
@@ -21,15 +25,56 @@ const PostDetailPage: React.FC = () => {
 
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post?.likes || 0);
+  const [shareCount, setShareCount] = useState(0);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [loadingEngagement, setLoadingEngagement] = useState(true);
   
   const commentSectionRef = useRef<HTMLDivElement>(null);
   
   const postIsSaved = post ? isSaved(post.id) : false;
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
+  // Load engagement stats on mount
+  useEffect(() => {
+    async function loadEngagement() {
+      if (!id || !post) return;
+      
+      try {
+        const stats = await getEngagementStats(id, currentUser?.id);
+        setIsLiked(stats.isLiked);
+        setLikeCount(stats.likeCount);
+        setShareCount(stats.shareCount);
+      } catch (error) {
+        console.error('Error loading engagement stats:', error);
+      } finally {
+        setLoadingEngagement(false);
+      }
+    }
+    
+    loadEngagement();
+  }, [id, currentUser?.id, post]);
+
+  const handleLike = async () => {
+    if (!currentUser || !post) {
+      alert('Please log in to like this post');
+      return;
+    }
+
+    // Optimistic UI update
+    const wasLiked = isLiked;
+    const prevCount = likeCount;
+    setIsLiked(!wasLiked);
+    setLikeCount(prevCount + (wasLiked ? -1 : 1));
+
+    try {
+      const result = await toggleLike(post.id, currentUser.id);
+      setIsLiked(result.isLiked);
+      setLikeCount(result.likeCount);
+    } catch (error) {
+      // Revert on error
+      setIsLiked(wasLiked);
+      setLikeCount(prevCount);
+      console.error('Error toggling like:', error);
+    }
   };
   
   const handleCommentClick = () => {
@@ -40,25 +85,58 @@ const PostDetailPage: React.FC = () => {
       if(post) toggleSave(post.id);
   }
 
-  const handleCopyLink = async () => {
+  const handleShare = async () => {
+    if (!post) return;
+    
     try {
       await navigator.clipboard.writeText(window.location.href);
-      alert('Link copied');
-    } catch {}
+      
+      // Record the share if user is authenticated
+      if (currentUser?.id) {
+        await recordShare(post.id, currentUser.id, 'link');
+        setShareCount(prev => prev + 1);
+      }
+      
+      alert('Link copied to clipboard!');
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
   };
 
-  const handleAddComment = (content: string, parentId: string) => {
-    if (!currentUser) return;
-    const newComment: Post = {
-      id: `c${Date.now()}`,
-      user: currentUser,
-      postType: 'TEXT',
-      content,
-      likes: 0,
-      timestamp: new Date().toISOString(),
-      parentId: parentId,
-    };
-    addPost(newComment);
+  const handleAddComment = async (content: string, parentId: string) => {
+    if (!currentUser || !post) return;
+    
+    try {
+      const newComment = await createComment({
+        post_id: parentId,
+        user_id: currentUser.id,
+        content,
+        parent_id: parentId === post.id ? undefined : parentId
+      });
+      
+      if (newComment) {
+        // Convert to Post format for local state (backwards compatibility)
+        const postComment: Post = {
+          id: newComment.id,
+          user: currentUser,
+          postType: 'TEXT',
+          content: newComment.content,
+          likes: 0,
+          timestamp: newComment.created_at,
+          parentId: newComment.parent_id || post.id,
+          isFlagged: newComment.is_flagged
+        };
+        
+        addPost(postComment);
+        
+        if (newComment.moderation_status === 'pending') {
+          alert('Your comment has been submitted for moderation review.');
+        }
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      alert('Failed to post comment. Please try again.');
+    }
   };
 
   const handleDeletePost = () => {
@@ -173,7 +251,7 @@ const PostDetailPage: React.FC = () => {
         )}
 
         {/* Action Bar */}
-        <div className="flex justify-around items-center py-4 border-y border-pan-gray-dark my-4">
+        <div className="flex flex-wrap justify-around items-center gap-3 py-4 border-y border-pan-gray-dark my-4">
           <button onClick={handleLike} className={`flex items-center gap-2 font-medium transition-colors ${isLiked ? 'text-pan-red' : 'text-pan-gray-light hover:text-pan-white'}`} aria-label={isLiked ? "Unlike post" : "Like post"}>
             <Heart size={24} fill={isLiked ? 'currentColor' : 'none'} />
             <span>{likeCount}</span>
@@ -182,12 +260,22 @@ const PostDetailPage: React.FC = () => {
             <MessageSquare size={24} />
             <span>{comments.length}</span>
           </button>
-          <button onClick={handleSaveClick} className={`flex items-center gap-2 font-medium transition-colors ${postIsSaved ? 'text-pan-white' : 'text-pan-gray-light hover:text-pan-white'}`} aria-label={postIsSaved ? "Unsave post" : "Save post"}>
-            <Bookmark size={24} fill={postIsSaved ? 'currentColor' : 'none'}/>
-          </button>
-          <button onClick={handleCopyLink} className="flex items-center gap-2 font-medium text-pan-gray-light hover:text-pan-white transition-colors" aria-label="Copy link">
+          <button onClick={handleShare} className="flex items-center gap-2 font-medium text-pan-gray-light hover:text-pan-white transition-colors" aria-label="Share post">
             <Share2 size={24} />
+            {shareCount > 0 && <span>{shareCount}</span>}
           </button>
+          
+          {/* New Action Buttons */}
+          {isOwnPost && (
+            <PostPrivacyToggle 
+              postId={post.id} 
+              initialIsPrivate={(post as any).is_private || false}
+            />
+          )}
+          <SaveToFolderButton 
+            itemId={post.id} 
+            itemType="post" 
+          />
         </div>
 
         {/* Comments Section */}

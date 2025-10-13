@@ -1,46 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const { postId, reason, actorId, ageRestrict } = await req.json()
-    if (!postId || !actorId) return NextResponse.json({ success: false, error: 'postId and actorId required' }, { status: 400 })
+    const { postId, actorId, reason, ageRestrict } = await request.json()
 
-    const updates: any = { 
-      safety_checked: true, 
-      is_safety_approved: false, 
-      is_flagged: true,
+    if (!postId || !actorId) {
+      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Update the post to mark it as blocked or age restricted
+    const updateData = {
+      safety_checked: true,
+      is_safety_approved: ageRestrict ? true : false, // Age restricted posts are "approved" but flagged
+      moderation_notes: reason,
       moderated_by: actorId,
-      moderated_at: new Date().toISOString(),
-      moderation_notes: reason || null
-    }
-    
-    if (ageRestrict) {
-      updates.moderation_status = 'age_restricted'
-    } else {
-      updates.moderation_status = 'rejected'
+      moderated_at: new Date().toISOString()
     }
 
-    const { error: upErr } = await supabase
+    const { error } = await supabase
       .from('posts')
-      .update(updates)
+      .update(updateData)
       .eq('id', postId)
 
-    if (upErr) return NextResponse.json({ success: false, error: upErr.message }, { status: 400 })
+    if (error) {
+      console.error('Error blocking post:', error)
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    }
 
-    const { error: logErr } = await supabase
-      .from('moderation_actions')
-      .insert({ post_id: postId, actor_id: actorId, action: ageRestrict ? 'age_restrict' : 'block', reason: reason || null })
-
-    if (logErr) return NextResponse.json({ success: false, error: logErr.message }, { status: 400 })
-
-    return NextResponse.json({ 
-      success: true, 
-      message: ageRestrict ? 'Post age-restricted successfully' : 'Post blocked successfully' 
-    })
-  } catch (e: any) {
-    return NextResponse.json({ success: false, error: e?.message || 'Block failed' }, { status: 400 })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error in block API:', error)
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
   }
 }
-
-

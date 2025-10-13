@@ -33,15 +33,16 @@ export default function ModQueuePage() {
   const load = async () => {
     setLoading(true)
     const { data, error } = await supabase
-      .from('moderation_queue')
+      .from('posts')
       .select('*')
       .order('created_at', { ascending: false })
+      .limit(50) // Limit to recent posts
     
     if (!error) {
       setItems(data as any)
-      console.log('Loaded moderation queue:', data?.length, 'items')
+      console.log('Loaded posts for moderation:', data?.length, 'items')
     } else {
-      console.error('Error loading queue:', error)
+      console.error('Error loading posts:', error)
     }
     setLoading(false)
   }

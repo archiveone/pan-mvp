@@ -33,13 +33,31 @@ export default function Dashboard() {
 
     try {
       const { data, error } = await supabase
-        .from('listings')
+        .from('posts')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setListings(data || [])
+      
+      // Transform posts to listing format
+      const transformedListings = (data || []).map(post => ({
+        id: post.id,
+        title: post.title,
+        description: post.content,
+        price: post.price || post.price_amount ? 
+          `${post.price_amount} ${post.currency || 'USD'}` : 
+          'Price on request',
+        location: post.location || 'Location not specified',
+        category: post.category || 'General',
+        image_url: post.media_url,
+        user_id: post.user_id,
+        is_sold: post.is_sold || false,
+        created_at: post.created_at,
+        updated_at: post.updated_at
+      }))
+      
+      setListings(transformedListings)
     } catch (error) {
       console.error('Error loading listings:', error)
     } finally {
@@ -52,7 +70,7 @@ export default function Dashboard() {
 
     try {
       const { data, error } = await supabase
-        .from('listings')
+        .from('posts')
         .select('is_sold')
         .eq('user_id', user.id)
 
@@ -76,7 +94,7 @@ export default function Dashboard() {
   const markAsSold = async (listingId: string) => {
     try {
       const { error } = await supabase
-        .from('listings')
+        .from('posts')
         .update({ is_sold: true })
         .eq('id', listingId)
 
@@ -95,7 +113,7 @@ export default function Dashboard() {
 
     try {
       const { error } = await supabase
-        .from('listings')
+        .from('posts')
         .delete()
         .eq('id', listingId)
 

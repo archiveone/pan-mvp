@@ -332,7 +332,7 @@ export async function getUserProfile(userId: string) {
   }
 }
 
-// Update user profile - using profiles table
+// Update user profile - using profiles table with upsert
 export async function updateUserProfile(userId: string, profileData: {
   username?: string;
   bio?: string;
@@ -343,86 +343,78 @@ export async function updateUserProfile(userId: string, profileData: {
   try {
     console.log('Attempting to update profile for user:', userId, 'with data:', profileData);
     
-    // First, check if profile exists
-    const { data: existingProfile, error: fetchError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (fetchError) {
-      console.error('Error checking existing profile:', fetchError);
-      throw fetchError;
-    }
-
-    const updateData = {
-      name: profileData.name || profileData.full_name || profileData.username,
-      username: profileData.username,
-      bio: profileData.bio,
-      avatar_url: profileData.avatar_url
+    const updateData: any = {
+      id: userId,
+      name: profileData.name || profileData.full_name || profileData.username || 'User',
+      username: profileData.username || 'user',
+      bio: profileData.bio || '',
+      avatar_url: profileData.avatar_url || ''
     };
 
-    // Remove undefined values
-    Object.keys(updateData).forEach(key => {
-      if (updateData[key as keyof typeof updateData] === undefined) {
-        delete updateData[key as keyof typeof updateData];
-      }
-    });
+    console.log('Using upsert with data:', updateData);
+    
+    // Use upsert to insert or update
+    const { data: profileResult, error: upsertError } = await supabase
+      .from('profiles')
+      .upsert(updateData, { onConflict: 'id' })
+      .select()
+      .single();
 
-    if (existingProfile) {
-      // Update existing profile
-      console.log('Updating existing profile with data:', updateData);
-      const { data: profileResult, error: profileError } = await supabase
+    if (upsertError) {
+      console.error('Profile upsert failed:', upsertError);
+      
+      // Try a direct update as fallback
+      console.log('Trying direct update as fallback...');
+      const { name, username, bio, avatar_url } = updateData;
+      const { data: updateResult, error: updateError } = await supabase
         .from('profiles')
-        .update(updateData)
+        .update({ name, username, bio, avatar_url })
         .eq('id', userId)
         .select()
-        .single();
-
-      if (profileError) {
-        console.error('Profile update failed:', profileError);
-        console.error('Profile update error details:', JSON.stringify(profileError, null, 2));
-        console.error('Profile update error message:', profileError.message);
-        console.error('Profile update error code:', profileError.code);
-        console.error('Profile update error hint:', profileError.hint);
-        throw profileError;
+        .maybeSingle();
+      
+      if (updateError) {
+        console.error('Direct update also failed:', updateError);
+        return { 
+          success: false, 
+          error: `Update failed. Please check RLS policies. Error: ${updateError.message || 'Unknown'}` 
+        };
       }
-
-      console.log('Profile update successful:', profileResult);
-      return { success: true, data: profileResult };
-    } else {
-      // Insert new profile
-      console.log('Creating new profile with data:', updateData);
-      const { data: insertResult, error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          id: userId,
-          name: updateData.name || 'User',
-          username: updateData.username,
-          bio: updateData.bio || 'Welcome to Pan!',
-          avatar_url: updateData.avatar_url
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Profile insert failed:', insertError);
-        console.error('Profile insert error details:', JSON.stringify(insertError, null, 2));
-        console.error('Profile insert error message:', insertError.message);
-        console.error('Profile insert error code:', insertError.code);
-        console.error('Profile insert error hint:', insertError.hint);
-        throw insertError;
+      
+      if (!updateResult) {
+        // Profile doesn't exist, try insert
+        console.log('Profile not found, trying insert...');
+        const { data: insertResult, error: insertError } = await supabase
+          .from('profiles')
+          .insert(updateData)
+          .select()
+          .single();
+        
+        if (insertError) {
+          console.error('Insert failed:', insertError);
+          return { 
+            success: false, 
+            error: `Could not create profile. Error: ${insertError.message || 'Unknown'}` 
+          };
+        }
+        
+        console.log('Profile insert successful:', insertResult);
+        return { success: true, data: insertResult };
       }
-
-      console.log('Profile insert successful:', insertResult);
-      return { success: true, data: insertResult };
+      
+      console.log('Direct update successful:', updateResult);
+      return { success: true, data: updateResult };
     }
+
+    console.log('Profile upsert successful:', profileResult);
+    return { success: true, data: profileResult };
+    
   } catch (error) {
     console.error('Error updating profile:', error);
-    console.error('Error type:', typeof error);
-    console.error('Error details:', JSON.stringify(error, null, 2));
-    console.error('Error message:', error instanceof Error ? error.message : 'No message');
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return { 
+      success: false, 
+      error: `Profile update failed: ${errorMessage}. Check that you have permission to update your profile.` 
+    };
   }
 }

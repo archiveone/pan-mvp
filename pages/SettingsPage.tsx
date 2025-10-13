@@ -7,7 +7,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import ToggleSwitch from '../components/ToggleSwitch';
 
 const SettingsPage: React.FC = () => {
-  const { logout, currentUser } = useAuth();
+  const { signOut: logout, user: currentUser } = useAuth();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 

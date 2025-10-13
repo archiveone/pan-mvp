@@ -19,7 +19,7 @@ interface EncryptedMessage extends Message {
  * @returns An object containing the array of messages and a function to send a new message.
  */
 export function useWebSocketChat(groupId: string, encryptionKey: CryptoKey | null) {
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const [messages, setMessages] = useState<EncryptedMessage[]>([]);
 
   // Load initial (historical) messages once

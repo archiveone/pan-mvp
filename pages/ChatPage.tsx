@@ -124,7 +124,7 @@ const MessageBubble: React.FC<{ message: EncryptedMessage, decryptionKey: Crypto
 }
 
 const CommunityChat: React.FC<{ groupId: string }> = ({ groupId }) => {
-    const { currentUser } = useAuth();
+    const { user: currentUser } = useAuth();
     const [newMessage, setNewMessage] = useState('');
     const [encryptionKey, setEncryptionKey] = useState<CryptoKey | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);

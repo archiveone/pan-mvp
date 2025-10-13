@@ -11,7 +11,7 @@ interface CommentFormProps {
 
 const CommentForm: React.FC<CommentFormProps> = ({ onSubmit, placeholder = "Add a comment...", buttonText = "Post", autoFocus = false }) => {
   const [content, setContent] = useState('');
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

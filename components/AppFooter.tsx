@@ -8,11 +8,13 @@ export default function AppFooter() {
           {/* Logo Section */}
           <div className="text-center md:text-left">
             <Link href="/" className="inline-block">
-              <img 
-                src="/pan logo transparent.png" 
-                alt="Pan Logo" 
-                className="h-10 mx-auto md:mx-0 mb-4 logo-white"
-              />
+              <div className="h-16 overflow-hidden flex items-center justify-center md:justify-start mb-4">
+                <img 
+                  src="/pan logo finalL.png" 
+                  alt="Pan Logo" 
+                  className="h-28 mx-auto md:mx-0 object-cover mix-blend-multiply dark:invert dark:mix-blend-screen"
+                />
+              </div>
             </Link>
             <p className="text-gray-600 text-sm">
               Your local marketplace for buying and selling

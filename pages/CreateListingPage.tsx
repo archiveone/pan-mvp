@@ -22,7 +22,7 @@ const CreateListingPage: React.FC = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | 'audio' | null>(null);
   const [category, setCategory] = useState<string>('');
   const [tags, setTags] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -43,7 +43,13 @@ const CreateListingPage: React.FC = () => {
       const file = e.target.files[0];
       const previewUrl = URL.createObjectURL(file);
       setMediaPreview(previewUrl);
-      setMediaType(file.type.startsWith('video/') ? 'video' : 'image');
+      if (file.type.startsWith('video/')) {
+        setMediaType('video');
+      } else if (file.type.startsWith('audio/')) {
+        setMediaType('audio' as any);
+      } else {
+        setMediaType('image');
+      }
     }
   };
 
@@ -126,6 +132,15 @@ const CreateListingPage: React.FC = () => {
                       controls // This provides functional play/pause controls.
                       playsInline 
                     />
+                  ) : mediaType === 'audio' ? (
+                    <div className="w-full h-full flex flex-col justify-center items-center p-4 bg-gray-800">
+                      <div className="text-white mb-4 text-lg">🎵 Audio File</div>
+                      <audio 
+                        src={mediaPreview} 
+                        controls 
+                        className="w-full max-w-md"
+                      />
+                    </div>
                   ) : (
                     <img 
                       src={mediaPreview} 
@@ -146,10 +161,10 @@ const CreateListingPage: React.FC = () => {
               ) : (
                 <label htmlFor="media-upload" className="cursor-pointer block w-full h-48 border-2 border-dashed border-gray-300 rounded-xl flex flex-col justify-center items-center text-gray-500 hover:border-pan-red hover:text-pan-red transition-colors">
                   <UploadCloud size={40} />
-                  <span className="mt-2 font-semibold">Upload Image or Video</span>
+                  <span className="mt-2 font-semibold">Upload Image, Video, or Audio</span>
                 </label>
               )}
-              <input id="media-upload" type="file" className="hidden" onChange={handleMediaChange} accept="image/*,video/*" required />
+              <input id="media-upload" type="file" className="hidden" onChange={handleMediaChange} accept="image/*,video/*,audio/*,.mp3,.wav,.m4a,.ogg,.flac" required />
             </div>
 
             <div>

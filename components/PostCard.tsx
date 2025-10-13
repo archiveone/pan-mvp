@@ -67,7 +67,7 @@ const PostCard: React.FC<{ post: Post; hideCommunityLink?: boolean }> = ({ post 
     return (
       <Link 
         to={`/post/${post.id}`} 
-        className="group relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-pan-gray-dark to-black text-pan-white shadow-lg"
+        className="group relative aspect-square overflow-hidden bg-gradient-to-br from-pan-gray-dark to-black text-pan-white shadow-lg"
       >
         {/* Blurred Media */}
         {post.videoUrl ? (
@@ -94,7 +94,7 @@ const PostCard: React.FC<{ post: Post; hideCommunityLink?: boolean }> = ({ post 
   return (
     <Link 
       to={`/post/${post.id}`} 
-      className="group relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-pan-gray-dark to-black text-pan-white shadow-lg"
+      className="group relative aspect-square overflow-hidden bg-gradient-to-br from-pan-gray-dark to-black text-pan-white shadow-lg"
     >
       {/* Media or Text Background */}
       {post.videoUrl ? (
@@ -120,18 +120,21 @@ const PostCard: React.FC<{ post: Post; hideCommunityLink?: boolean }> = ({ post 
         </div>
       )}
       
-      {/* Post Type Indicator */}
+      {/* Post Type Indicator - Top Right */}
       <PostTypeIndicator post={post} />
+      
+      {/* Location Tag - Top Left (if exists) */}
+      {post.location && (
+        <div className="absolute top-3 left-3 z-10">
+          <div className="inline-flex items-center px-2.5 py-1 bg-black/50 backdrop-blur-md text-white rounded-full text-xs font-medium">
+            <MapPin size={12} className="mr-1" />
+            {post.location}
+          </div>
+        </div>
+      )}
 
       {/* Unified Hover Overlay for ALL post types */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-end">
-          <button 
-            onClick={handleSaveClick}
-            className={`absolute top-3 left-3 z-10 p-2 rounded-full transition-colors bg-black/50 backdrop-blur-md ${postIsSaved ? 'text-pan-white' : 'text-pan-gray-light hover:text-pan-white'}`}
-            aria-label={postIsSaved ? "Unsave post" : "Save post"}
-          >
-            <Bookmark size={18} fill={postIsSaved ? 'currentColor' : 'none'} />
-          </button>
           <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
               {post.title && <h3 className="text-pan-white font-bold text-lg line-clamp-2">{post.title}</h3>}
               

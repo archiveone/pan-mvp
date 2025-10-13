@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import MessagingInterface from '@/components/MessagingInterface';
+import SimpleMessagingInterface from '@/components/SimpleMessagingInterface';
 import AppHeader from '@/components/AppHeader';
 import AppFooter from '@/components/AppFooter';
 import BottomNav from '@/components/BottomNav';
@@ -10,12 +10,22 @@ import BottomNav from '@/components/BottomNav';
 export default function MessagesPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [contactUserId, setContactUserId] = useState<string | undefined>();
 
   useEffect(() => {
     if (user) {
       setLoading(false);
     }
   }, [user]);
+
+  // Check for contact parameter in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const contact = urlParams.get('contact');
+    if (contact) {
+      setContactUserId(contact);
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -45,7 +55,7 @@ export default function MessagesPage() {
     <div className="min-h-screen bg-gray-50">
       <AppHeader />
       <div className="h-screen pt-16 pb-16">
-        <MessagingInterface />
+        <SimpleMessagingInterface contactUserId={contactUserId} />
       </div>
       <AppFooter />
       <BottomNav />

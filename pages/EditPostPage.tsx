@@ -9,7 +9,7 @@ import { usePosts } from '../contexts/PostsContext';
 const EditPostPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const { posts } = usePosts();
   
   const postToEdit = posts.find(p => p.id === id);
@@ -19,7 +19,7 @@ const EditPostPage: React.FC = () => {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | 'audio' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -47,7 +47,13 @@ const EditPostPage: React.FC = () => {
       const file = e.target.files[0];
       const previewUrl = URL.createObjectURL(file);
       setMediaPreview(previewUrl);
-      setMediaType(file.type.startsWith('video/') ? 'video' : 'image');
+      if (file.type.startsWith('video/')) {
+        setMediaType('video');
+      } else if (file.type.startsWith('audio/')) {
+        setMediaType('audio' as any);
+      } else {
+        setMediaType('image');
+      }
     }
   };
 
@@ -103,6 +109,15 @@ const EditPostPage: React.FC = () => {
                     muted
                     playsInline
                   />
+                ) : mediaType === 'audio' ? (
+                  <div className="w-full h-full flex flex-col justify-center items-center p-4">
+                    <div className="text-pan-white mb-4">🎵 Audio File</div>
+                    <audio 
+                      src={mediaPreview} 
+                      controls 
+                      className="w-full max-w-md"
+                    />
+                  </div>
                 ) : (
                   <img 
                     src={mediaPreview} 
@@ -118,10 +133,10 @@ const EditPostPage: React.FC = () => {
             ) : (
               <label htmlFor="media-upload" className="cursor-pointer block w-full h-48 border-2 border-dashed border-pan-gray rounded-xl flex flex-col justify-center items-center text-pan-gray hover:border-pan-white hover:text-pan-white transition-colors">
                 <UploadCloud size={40} />
-                <span className="mt-2 font-semibold">Upload Image or Video</span>
+                <span className="mt-2 font-semibold">Upload Image, Video, or Audio</span>
               </label>
             )}
-            <input id="media-upload" type="file" className="hidden" onChange={handleMediaChange} accept="image/*,video/*"/>
+            <input id="media-upload" type="file" className="hidden" onChange={handleMediaChange} accept="image/*,video/*,audio/*,.mp3,.wav,.m4a,.ogg,.flac"/>
         </div>
         )}
 

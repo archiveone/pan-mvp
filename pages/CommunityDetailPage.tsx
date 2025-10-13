@@ -67,7 +67,7 @@ const CreateGroupModal: React.FC<{
 const CommunityDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const { posts, communities, chatGroups } = usePosts();
   const community = communities.find((c) => c.id === id);
   const communityPosts = posts.filter(p => p.parentId === id).sort((a,b) => b.id.localeCompare(a.id));

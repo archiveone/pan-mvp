@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/Button';
 
 const EditProfilePage: React.FC = () => {
-  const { currentUser, updateUser } = useAuth();
+  const { user: currentUser, updateProfile: updateUser } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 

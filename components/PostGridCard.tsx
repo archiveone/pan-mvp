@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Post } from '../types';
-import { Heart } from 'lucide-react';
+import { Heart, MapPin } from 'lucide-react';
 
 const PostGridCard: React.FC<{ post: Post }> = ({ post }) => {
   const [isLiked, setIsLiked] = useState(false);
@@ -21,13 +21,23 @@ const PostGridCard: React.FC<{ post: Post }> = ({ post }) => {
     return (
       <Link 
         to={`/profile`} // Assuming posts link to profile for now
-        className="group relative aspect-square rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
+        className="group relative aspect-square overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
       >
         <img 
             src={post.imageUrl} 
             alt="Post" 
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
         />
+        
+        {/* Location Tag - Always visible (if exists) */}
+        {post.location && (
+          <div className="absolute top-3 left-3 z-10">
+            <div className="inline-flex items-center px-2.5 py-1 bg-black/50 backdrop-blur-md text-white rounded-full text-xs font-medium">
+              <MapPin size={12} className="mr-1" />
+              {post.location}
+            </div>
+          </div>
+        )}
         
         {/* White strip hover effect */}
         <div className="absolute inset-x-0 bottom-0 bg-white p-3 transform translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-in-out">
@@ -55,7 +65,7 @@ const PostGridCard: React.FC<{ post: Post }> = ({ post }) => {
   return (
     <Link 
         to={`/profile`} 
-        className="group relative aspect-square rounded-2xl overflow-hidden shadow-md p-4 flex flex-col justify-between bg-white hover:shadow-xl hover:scale-105 transition-all duration-300"
+        className="group relative aspect-square overflow-hidden shadow-md p-4 flex flex-col justify-between bg-white hover:shadow-xl hover:scale-105 transition-all duration-300"
     >
       <div>
         <div className="flex items-center gap-2 mb-2">

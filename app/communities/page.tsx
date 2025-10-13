@@ -42,19 +42,38 @@ export default function CommunitiesPage() {
 
   const fetchCommunities = async () => {
     try {
+      // Use user_groups table as communities for now
       const { data, error } = await supabase
-        .from('communities')
+        .from('user_groups')
         .select(`
           *,
-          user_profiles!communities_created_by_fkey (
-            display_name,
+          profiles!user_groups_created_by_fkey (
+            name,
             avatar_url
           )
         `)
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setCommunities(data || [])
+      
+      // Transform user_groups to community format
+      const transformedCommunities = (data || []).map(group => ({
+        id: group.id,
+        name: group.name || 'Unnamed Group',
+        description: group.description || 'No description available',
+        cover_image_url: group.cover_image_url,
+        is_public: group.is_public !== false,
+        member_count: group.member_count || 0,
+        post_count: group.post_count || 0,
+        created_by: group.created_by,
+        created_at: group.created_at,
+        user_profiles: {
+          display_name: group.profiles?.name || 'Unknown User',
+          avatar_url: group.profiles?.avatar_url
+        }
+      }))
+      
+      setCommunities(transformedCommunities)
     } catch (error) {
       console.error('Error fetching communities:', error)
     } finally {
@@ -68,32 +87,26 @@ export default function CommunitiesPage() {
 
     try {
       const { data, error } = await supabase
-        .from('communities')
+        .from('user_groups')
         .insert([{
           name: newCommunity.name,
           description: newCommunity.description,
           is_public: newCommunity.is_public,
-          created_by: user.id
+          created_by: user.id,
+          member_count: 1,
+          post_count: 0
         }])
         .select()
         .single()
 
       if (error) throw error
 
-      // Add creator as admin member
-      await supabase
-        .from('community_members')
-        .insert([{
-          community_id: data.id,
-          user_id: user.id,
-          role: 'admin'
-        }])
-
       setNewCommunity({ name: '', description: '', is_public: true })
       setShowCreateForm(false)
       fetchCommunities()
     } catch (error) {
       console.error('Error creating community:', error)
+      alert('Failed to create community. Please try again.')
     }
   }
 

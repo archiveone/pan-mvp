@@ -11,7 +11,7 @@ interface NotificationData {
   duration?: number;
 }
 
-export function SimpleNotification({ id, type, title, message, duration = 5000 }: NotificationData }) {
+export function SimpleNotification({ id, type, title, message, duration = 5000 }: NotificationData) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {

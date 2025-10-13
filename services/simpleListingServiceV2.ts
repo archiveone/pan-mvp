@@ -93,19 +93,30 @@ export async function uploadSimpleMediaV2(postId: string, files: File[]) {
       return { success: true, media: [] }
     }
 
-    // For now, just save the first image URL to the posts table
-    // This is a simplified approach that works with the existing database structure
-    const firstFile = files[0]
+    // Upload files to Supabase Storage
+    console.log('Uploading files to Supabase Storage...')
     
-        // Create a simple URL for the image (in a real app, you'd upload to storage)
-        const imageUrl = `https://picsum.photos/400/400?random=${Date.now()}`
+    // Use ImageService to upload (supports real Supabase Storage)
+    const { ImageService } = require('./imageService')
     
-    console.log('Using placeholder image URL:', imageUrl)
+    const uploadResult = await ImageService.uploadImages(files, 'content-images', 'listings')
     
-    // Update the post with the media URL
+    if (!uploadResult.success || !uploadResult.urls || uploadResult.urls.length === 0) {
+      throw new Error(uploadResult.error || 'Failed to upload images to storage')
+    }
+    
+    const imageUrl = uploadResult.urls[0] // First image as main
+    const imageUrls = uploadResult.urls // All images
+    
+    console.log('✅ Uploaded to Supabase Storage:', imageUrl)
+    
+    // Update the post with the media URLs
     const { error: updateError } = await supabase
       .from('posts')
-      .update({ media_url: imageUrl })
+      .update({ 
+        media_url: imageUrl,      // Main image
+        media_urls: imageUrls     // All images array
+      })
       .eq('id', postId)
 
     if (updateError) {

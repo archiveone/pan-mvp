@@ -72,13 +72,13 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Please sign in</h1>
-          <p className="text-gray-600 mb-6">You need to be signed in to view your profile.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Please sign in</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">You need to be signed in to view your profile.</p>
           <Link 
             href="/"
-            className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors"
+            className="bg-black dark:bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
           >
             Go to Home
           </Link>
@@ -88,28 +88,28 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header with Logo */}
       <AppHeader />
       
       {/* Page Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-              <p className="text-gray-600">Manage your account information</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Profile</h1>
+              <p className="text-gray-600 dark:text-gray-400">Manage your account information</p>
             </div>
             <div className="flex items-center space-x-3">
               <Link
                 href="/profile/comprehensive"
-                className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                className="bg-black dark:bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
               >
                 Advanced Profile
               </Link>
               <Link
                 href="/dashboard"
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
               >
                 ← Back to Dashboard
               </Link>
@@ -122,9 +122,9 @@ export default function Profile() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Profile Info */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="text-center">
-                <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center">
                   {formData.avatar_url ? (
                     <img 
                       src={formData.avatar_url} 
@@ -135,29 +135,29 @@ export default function Profile() {
                     <span className="text-2xl text-gray-400">👤</span>
                   )}
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                   {formData.full_name || 'No name set'}
                 </h2>
-                <p className="text-gray-500 text-sm mt-1">
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                   {user.email}
                 </p>
                 {profile?.handle && (
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     @{profile.handle}
                   </p>
                 )}
                 {profile?.is_verified && (
-                  <div className="flex items-center justify-center mt-2 text-green-600">
+                  <div className="flex items-center justify-center mt-2 text-green-600 dark:text-green-400">
                     <span className="text-sm font-medium">✓ Verified</span>
                   </div>
                 )}
                 {profile?.is_business && (
-                  <div className="flex items-center justify-center mt-2 text-blue-600">
+                  <div className="flex items-center justify-center mt-2 text-blue-600 dark:text-blue-400">
                     <span className="text-sm font-medium">🏢 Business</span>
                   </div>
                 )}
                 {formData.bio && (
-                  <p className="text-gray-600 text-sm mt-3">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mt-3">
                     {formData.bio}
                   </p>
                 )}
@@ -167,15 +167,15 @@ export default function Profile() {
 
           {/* Edit Form */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {editing ? 'Edit Profile' : 'Profile Information'}
                 </h3>
                 {!editing && (
                   <button
                     onClick={() => setEditing(true)}
-                    className="text-black hover:text-gray-700 font-medium"
+                    className="text-black dark:text-gray-200 hover:text-gray-700 dark:hover:text-gray-100 font-medium"
                   >
                     Edit
                   </button>
@@ -185,7 +185,7 @@ export default function Profile() {
               {editing ? (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Full Name
                     </label>
                     <input
@@ -194,13 +194,13 @@ export default function Profile() {
                       name="full_name"
                       value={formData.full_name}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-gray-500 focus:border-transparent"
                       placeholder="Enter your full name"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Bio
                     </label>
                     <textarea
@@ -209,13 +209,13 @@ export default function Profile() {
                       value={formData.bio}
                       onChange={handleChange}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-gray-500 focus:border-transparent"
                       placeholder="Tell us about yourself..."
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="avatar_url" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="avatar_url" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Avatar URL
                     </label>
                     <input
@@ -224,7 +224,7 @@ export default function Profile() {
                       name="avatar_url"
                       value={formData.avatar_url}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-gray-500 focus:border-transparent"
                       placeholder="https://example.com/avatar.jpg"
                     />
                   </div>
@@ -233,14 +233,14 @@ export default function Profile() {
                     <button
                       type="button"
                       onClick={() => setEditing(false)}
-                      className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                      className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={loading}
-                      className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 bg-black dark:bg-gray-700 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? 'Saving...' : 'Save Changes'}
                     </button>
@@ -249,31 +249,31 @@ export default function Profile() {
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Full Name
                     </label>
-                    <p className="text-gray-900">{formData.full_name || 'Not set'}</p>
+                    <p className="text-gray-900 dark:text-gray-100">{formData.full_name || 'Not set'}</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Bio
                     </label>
-                    <p className="text-gray-900">{formData.bio || 'No bio added'}</p>
+                    <p className="text-gray-900 dark:text-gray-100">{formData.bio || 'No bio added'}</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Email
                     </label>
-                    <p className="text-gray-900">{user.email}</p>
+                    <p className="text-gray-900 dark:text-gray-100">{user.email}</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Member Since
                     </label>
-                    <p className="text-gray-900">
+                    <p className="text-gray-900 dark:text-gray-100">
                       {new Date(user.created_at).toLocaleDateString()}
                     </p>
                   </div>

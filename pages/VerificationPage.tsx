@@ -10,7 +10,7 @@ const VerificationPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

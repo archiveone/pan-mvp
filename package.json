@@ -10,14 +10,18 @@
   },
   "dependencies": {
     "@google/genai": "^1.22.0",
-    "@stripe/react-stripe-js": "^5.0.0",
+    "@paypal/react-paypal-js": "^8.9.2",
+    "@stripe/react-stripe-js": "^5.2.0",
     "@stripe/stripe-js": "^8.0.0",
     "@supabase/supabase-js": "^2.58.0",
     "crypto-js": "^4.2.0",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.2.3",
     "lucide-react": "^0.544.0",
     "next": "^15.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-grid-layout": "^1.5.2",
     "react-image-crop": "^11.0.10",
     "stripe": "^19.1.0"
   },
@@ -26,6 +30,8 @@
     "@types/react": "^18.3.25",
     "@types/react-dom": "^18.3.7",
     "autoprefixer": "^10.4.21",
+    "eslint": "9.37.0",
+    "eslint-config-next": "15.5.4",
     "tailwindcss": "^3.4.18",
     "typescript": "~5.8.2"
   }

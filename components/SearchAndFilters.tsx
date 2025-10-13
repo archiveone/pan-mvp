@@ -12,10 +12,14 @@ interface SearchAndFiltersProps {
   onDateChange?: (date: string) => void
   onGuestsChange?: (guests: number) => void
   onPriceRangeChange?: (min: number, max: number) => void
+  onSortChange?: (sortBy: string) => void
+  onAvailabilityChange?: (availability: string) => void
   location?: string
   date?: string
   guests?: number
   priceRange?: { min: number; max: number }
+  sortBy?: string
+  availability?: string
 }
 
 export default function SearchAndFilters({ 
@@ -27,10 +31,14 @@ export default function SearchAndFilters({
   onDateChange,
   onGuestsChange,
   onPriceRangeChange,
+  onSortChange,
+  onAvailabilityChange,
   location = '',
   date = '',
   guests = 1,
-  priceRange = { min: 0, max: 1000 }
+  priceRange = { min: 0, max: 1000 },
+  sortBy = 'trending',
+  availability = 'all'
 }: SearchAndFiltersProps) {
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm)
   const [showFilters, setShowFilters] = useState(false)
@@ -38,6 +46,8 @@ export default function SearchAndFilters({
   const [localDate, setLocalDate] = useState(date)
   const [localGuests, setLocalGuests] = useState(guests)
   const [localPriceRange, setLocalPriceRange] = useState(priceRange)
+  const [localSortBy, setLocalSortBy] = useState(sortBy)
+  const [localAvailability, setLocalAvailability] = useState(availability)
 
   const categories = [
     { name: 'All', icon: Star },
@@ -92,17 +102,21 @@ export default function SearchAndFilters({
     setLocalLocation('')
     setLocalDate('')
     setLocalPriceRange({ min: 0, max: 1000 })
+    setLocalSortBy('trending')
+    setLocalAvailability('all')
     onSearch?.('')
     onLocationChange?.('')
     onDateChange?.('')
     onPriceRangeChange?.(0, 1000)
+    onSortChange?.('trending')
+    onAvailabilityChange?.('all')
   }
 
   return (
     <div className="search-section bg-white dark:bg-gray-900">
-      <div className="max-w-6xl mx-auto px-4 py-4">
+      <div className="max-w-6xl mx-auto px-4 py-4 pb-0">
         {/* Single Line Search Bar - Responsive */}
-        <div className="relative mb-4">
+        <div className="relative mb-0">
           <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full shadow-sm hover:shadow-md transition-shadow search-bar">
             {/* Search Input */}
             <div className="flex-1 px-4 py-2">
@@ -165,7 +179,7 @@ export default function SearchAndFilters({
             </div>
             
             {/* Search Button */}
-            <button className="m-1 p-2 bg-gradient-to-r from-pink-400 to-orange-400 hover:from-pink-500 hover:to-orange-500 text-white rounded-full transition-all duration-200">
+            <button className="m-1 p-2 bg-gradient-to-r from-lime-400 to-lime-300 hover:brightness-95 text-black rounded-full transition-all duration-200">
               <Search size={16} />
             </button>
           </div>
@@ -229,19 +243,34 @@ export default function SearchAndFilters({
               {/* Sort By */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900">
-                  <option value="relevance">Relevance</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
+                <select 
+                  value={localSortBy}
+                  onChange={(e) => {
+                    setLocalSortBy(e.target.value)
+                    onSortChange?.(e.target.value)
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
+                >
+                  <option value="trending">🔥 Trending</option>
+                  <option value="popular">⭐ Popular</option>
+                  <option value="newest">🆕 Newest First</option>
+                  <option value="price_low">💰 Price: Low to High</option>
+                  <option value="price_high">💎 Price: High to Low</option>
+                  <option value="oldest">📅 Oldest First</option>
                 </select>
               </div>
               
               {/* Availability */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900">
+                <select 
+                  value={localAvailability}
+                  onChange={(e) => {
+                    setLocalAvailability(e.target.value)
+                    onAvailabilityChange?.(e.target.value)
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
+                >
                   <option value="all">All Items</option>
                   <option value="available">Available Now</option>
                   <option value="scheduled">Scheduled</option>

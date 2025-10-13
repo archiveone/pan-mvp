@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import DuolingoListingWizard from './DuolingoListingWizard';
+import UnifiedContentCreator from './UnifiedContentCreator';
 
 interface CreateButtonProps {
   variant?: 'floating' | 'inline' | 'minimal';
@@ -46,11 +46,11 @@ export default function CreateButton({
   const getVariantClasses = () => {
     switch (variant) {
       case 'inline':
-        return 'bg-gradient-to-r from-pink-400 to-orange-400 hover:from-pink-500 hover:to-orange-500 text-white rounded-lg px-4 py-2';
+        return 'bg-gradient-to-r from-lime-400 to-lime-300 hover:brightness-95 text-black rounded-lg px-4 py-2 transition-all';
       case 'minimal':
-        return 'bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-4 py-2';
+        return 'bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-4 py-2 transition-all';
       default:
-        return 'bg-gradient-to-r from-pink-400 to-orange-400 hover:from-pink-500 hover:to-orange-500 text-white rounded-full shadow-lg hover:shadow-xl';
+        return 'bg-gradient-to-r from-lime-400 to-lime-300 hover:brightness-95 text-black rounded-full shadow-lg hover:shadow-xl transition-all';
     }
   };
 
@@ -64,10 +64,15 @@ export default function CreateButton({
         <Plus size={getIconSize()} />
       </button>
 
-      <DuolingoListingWizard
+      <UnifiedContentCreator
         isOpen={showWizard}
         onClose={() => setShowWizard(false)}
-        onComplete={() => {}}
+        onSuccess={(contentId) => {
+          console.log('Content created successfully:', contentId)
+          setShowWizard(false)
+          // Refresh the page to show new content
+          window.location.reload()
+        }}
       />
     </>
   );

@@ -1,42 +1,48 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { StripeService } from '../../../../services/stripeService';
+import { NextRequest, NextResponse } from 'next/server'
+import Stripe from 'stripe'
 
-export async function POST(request: NextRequest) {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-12-18.acacia',
+})
+
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-    const { amount, currency, postId, userId, metadata } = body;
+    const { amount, currency, listingId, userId } = await req.json()
 
-    if (!amount || !userId) {
+    if (!amount || !currency) {
       return NextResponse.json(
-        { error: 'Amount and userId are required' },
+        { error: 'Missing required fields' },
         { status: 400 }
-      );
+      )
     }
 
-    const result = await StripeService.createPaymentIntent({
-      amount,
-      currency,
-      postId,
-      userId,
-      metadata,
-    });
+    // Calculate service fee (5%)
+    const serviceFee = Math.round(amount * 0.05 * 100) // in cents
+    const totalAmount = Math.round(amount * 100) + serviceFee // in cents
 
-    if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      );
-    }
+    // Create payment intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: totalAmount,
+      currency: currency.toLowerCase(),
+      automatic_payment_methods: {
+        enabled: true,
+      },
+      metadata: {
+        listingId: listingId || '',
+        userId: userId || '',
+        serviceFee: serviceFee.toString(),
+      },
+    })
 
     return NextResponse.json({
-      clientSecret: result.clientSecret,
-      paymentIntentId: result.paymentIntentId,
-    });
-  } catch (error) {
-    console.error('Error creating payment intent:', error);
+      clientSecret: paymentIntent.client_secret,
+      amount: totalAmount,
+    })
+  } catch (error: any) {
+    console.error('Error creating payment intent:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error.message || 'Failed to create payment intent' },
       { status: 500 }
-    );
+    )
   }
 }

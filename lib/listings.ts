@@ -18,7 +18,16 @@ export const listingsService = {
   async getAllListings(): Promise<Listing[]> {
     const { data, error } = await supabase
       .from('posts')
-      .select('*')
+      .select(`
+        *,
+        profiles!posts_user_id_fkey (
+          id,
+          name,
+          username,
+          avatar_url
+        )
+      `)
+      // .eq('is_safety_approved', true) // Commented out until migration is run
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -32,26 +41,73 @@ export const listingsService = {
       title: post.title,
       content: post.content,
       location: post.location || 'Location not specified',
-      category: 'General', // Default category since we don't have this field
-      price: 'Price on request', // Default since we don't have this field
-      image_url: undefined, // Will be added later
+      category: post.category || 'General',
+      price: post.price || post.price_amount ? `${post.price_amount} ${post.currency || 'USD'}` : 'Price on request',
+      image_url: post.media_url,
       user_id: post.user_id,
-      created_at: post.created_at
+      created_at: post.created_at,
+      profiles: {
+        username: post.profiles?.username || post.profiles?.name || 'Unknown User',
+        avatar_url: post.profiles?.avatar_url || ''
+      }
     }))
   },
 
-  // Get listings by category (simplified since we don't have category field yet)
+  // Get listings by category
   async getListingsByCategory(category: string): Promise<Listing[]> {
-    // For now, return all listings since we don't have category field
-    return this.getAllListings()
+    const { data, error } = await supabase
+      .from('posts')
+      .select(`
+        *,
+        profiles!posts_user_id_fkey (
+          id,
+          name,
+          username,
+          avatar_url
+        )
+      `)
+      .eq('category', category)
+      // .eq('is_safety_approved', true) // Commented out until migration is run
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching listings by category:', error)
+      return []
+    }
+
+    // Transform posts to listings format
+    return (data || []).map(post => ({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      location: post.location || 'Location not specified',
+      category: post.category || 'General',
+      price: post.price || post.price_amount ? `${post.price_amount} ${post.currency || 'USD'}` : 'Price on request',
+      image_url: post.media_url,
+      user_id: post.user_id,
+      created_at: post.created_at,
+      profiles: {
+        username: post.profiles?.username || post.profiles?.name || 'Unknown User',
+        avatar_url: post.profiles?.avatar_url || ''
+      }
+    }))
   },
 
   // Search listings
   async searchListings(searchTerm: string): Promise<Listing[]> {
     const { data, error } = await supabase
       .from('posts')
-      .select('*')
+      .select(`
+        *,
+        profiles!posts_user_id_fkey (
+          id,
+          name,
+          username,
+          avatar_url
+        )
+      `)
       .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
+      // .eq('is_safety_approved', true) // Commented out until migration is run
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -65,11 +121,15 @@ export const listingsService = {
       title: post.title,
       content: post.content,
       location: post.location || 'Location not specified',
-      category: 'General',
-      price: 'Price on request',
-      image_url: undefined,
+      category: post.category || 'General',
+      price: post.price || post.price_amount ? `${post.price_amount} ${post.currency || 'USD'}` : 'Price on request',
+      image_url: post.media_url,
       user_id: post.user_id,
-      created_at: post.created_at
+      created_at: post.created_at,
+      profiles: {
+        username: post.profiles?.username || post.profiles?.name || 'Unknown User',
+        avatar_url: post.profiles?.avatar_url || ''
+      }
     }))
   },
 
@@ -92,9 +152,9 @@ export const listingsService = {
       title: post.title,
       content: post.content,
       location: post.location || 'Location not specified',
-      category: 'General',
-      price: 'Price on request',
-      image_url: undefined,
+      category: post.category || 'General',
+      price: post.price || post.price_amount ? `${post.price_amount} ${post.currency || 'USD'}` : 'Price on request',
+      image_url: post.media_url,
       user_id: post.user_id,
       created_at: post.created_at
     }))
@@ -119,9 +179,9 @@ export const listingsService = {
       title: data.title,
       content: data.content,
       location: data.location || 'Location not specified',
-      category: 'General',
-      price: 'Price on request',
-      image_url: undefined,
+      category: post.category || 'General',
+      price: post.price || post.price_amount ? `${post.price_amount} ${post.currency || 'USD'}` : 'Price on request',
+      image_url: post.media_url,
       user_id: data.user_id,
       created_at: data.created_at
     }
@@ -147,9 +207,9 @@ export const listingsService = {
       title: data.title,
       content: data.content,
       location: data.location || 'Location not specified',
-      category: 'General',
-      price: 'Price on request',
-      image_url: undefined,
+      category: post.category || 'General',
+      price: post.price || post.price_amount ? `${post.price_amount} ${post.currency || 'USD'}` : 'Price on request',
+      image_url: post.media_url,
       user_id: data.user_id,
       created_at: data.created_at
     }

@@ -1,109 +1,189 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
 import AppHeader from '@/components/AppHeader'
 import AppFooter from '@/components/AppFooter'
 import BottomNav from '@/components/BottomNav'
 import ListingGrid from '@/components/ListingGrid'
 import SearchAndFilters from '@/components/SearchAndFilters'
+import SmartTagFilters from '@/components/SmartTagFilters'
+import StoriesBar from '@/components/StoriesBar'
+// import FeaturedListings from '@/components/FeaturedListings'
+import { ContentService } from '@/services/contentService'
+import { SearchFilters, UnifiedContent } from '@/types/content'
 
-interface Listing {
-  id: string;
-  title: string;
-  content: string;
-  price?: number;
-  currency?: string;
-  category?: string;
-  location?: string;
-  event_date?: string;
-  capacity?: number;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-  is_published?: boolean;
-  media_url?: string;
-  profiles?: { username: string; avatar_url: string };
-  is_safety_approved?: boolean;
-}
+// Use the unified content type from our types
+type HomepageContent = UnifiedContent;
 
 export default function Home() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('All')
   const [location, setLocation] = useState('')
   const [date, setDate] = useState('')
   const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 })
-  const [listings, setListings] = useState<Listing[]>([])
+  const [sortBy, setSortBy] = useState('trending')
+  const [availability, setAvailability] = useState('all')
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [content, setContent] = useState<HomepageContent[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   
-  // Load listings from database
-  useEffect(() => {
-    loadListings()
-  }, [])
-
-  const loadListings = async () => {
+  // Load content from database using unified service
+  const loadContent = useCallback(async () => {
     setLoading(true)
+    setError(null)
+    
     try {
-      // Fetch posts with images
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('is_safety_approved', true)
-        .order('created_at', { ascending: false })
+      const filters: SearchFilters = {
+        query: searchTerm || undefined,
+        location: location || undefined,
+        price_min: priceRange.min > 0 ? priceRange.min : undefined,
+        price_max: priceRange.max < 1000 ? priceRange.max : undefined,
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
+        sort_by: sortBy as any,
+        limit: 50
+      }
 
-      if (error) {
-        console.error('Error fetching listings:', error)
-        console.error('Error details:', error.message)
-        setListings([])
+      const result = await ContentService.searchContent(filters)
+      
+      if (result.success && result.results) {
+        setContent(result.results.results)
       } else {
-        console.log('Fetched listings:', data)
-        console.log('Sample listing with media:', data?.[0])
-        setListings(data || [])
+        console.error('❌ Failed to load content:', result.error)
+        setError(result.error || 'Failed to load content')
+        setContent([])
       }
     } catch (error) {
-      console.error('Error loading listings:', error)
-      setListings([])
+      console.error('❌ Unexpected error:', error)
+      setError('An unexpected error occurred')
+      setContent([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchTerm, location, priceRange, date, availability, sortBy, selectedTags])
 
-  // Filter listings based on all search criteria
-  const filteredListings = listings.filter(listing => {
-    const matchesCategory = selectedCategory === 'All' || !listing.category || listing.category === selectedCategory
-    const matchesSearch = !searchTerm || listing.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         listing.content?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesLocation = !location || !listing.location || listing.location?.toLowerCase().includes(location.toLowerCase())
-    const matchesPrice = !listing.price || (listing.price >= priceRange.min && listing.price <= priceRange.max)
-    
-    return matchesCategory && matchesSearch && matchesLocation && matchesPrice
-  })
+  // Load content when component mounts or filters change
+  useEffect(() => {
+    loadContent()
+  }, [loadContent])
+
+  // Convert UnifiedContent to Listing interface for ListingGrid compatibility
+  const displayListings = content.map(item => ({
+    id: item.id,
+    title: item.title,
+    content: item.content || '',
+    price: (item as any).price_amount ? `${(item as any).price_amount} ${(item as any).currency || 'EUR'}` : undefined,
+    currency: (item as any).currency,
+    location: item.location,
+    category: (item as any).category,
+    event_date: (item as any).event_date,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+    user_id: item.user_id,
+    profiles: item.profiles ? {
+      username: item.profiles.username || item.profiles.name || 'Unknown User',
+      avatar_url: item.profiles.avatar_url || ''
+    } : undefined,
+    media_url: item.media_url,
+    image_url: item.media_url,
+    is_sold: false, // We're only showing approved listings, so none should be sold
+    content_type: item.content_type // Add content type for better handling
+  }))
 
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
       <AppHeader />
 
-      {/* Search */}
+      {/* Search and Filters (no category tabs) */}
       <SearchAndFilters 
         onSearch={setSearchTerm}
         searchTerm={searchTerm}
-        onCategoryChange={setSelectedCategory}
-        selectedCategory={selectedCategory}
         onLocationChange={setLocation}
         onDateChange={setDate}
         onPriceRangeChange={(min, max) => setPriceRange({ min, max })}
+        onSortChange={setSortBy}
+        onAvailabilityChange={setAvailability}
         location={location}
         date={date}
         priceRange={priceRange}
+        sortBy={sortBy}
+        availability={availability}
       />
+
+      {/* Smart Tag Filters */}
+      <SmartTagFilters 
+        posts={content.map(item => ({
+          id: item.id,
+          user: {
+            id: item.user_id || '',
+            name: item.profiles?.name || '',
+            avatarUrl: item.profiles?.avatar_url || '',
+            bio: ''
+          },
+          postType: item.content_type?.toUpperCase() as any || 'ITEM',
+          content: item.content || '',
+          tags: (item as any).tags || [],
+          likes: 0,
+          timestamp: item.created_at
+        }))}
+        selectedTags={selectedTags}
+        onTagsChange={setSelectedTags}
+      />
+
+      {/* Featured Listings Section - Temporarily disabled */}
+      {/* <FeaturedListings /> */}
+
+      {/* Stories Bar - Above Listings */}
+      <StoriesBar />
 
       {/* Content */}
       <main className="px-4 py-6 pb-20">
         <div className="max-w-6xl mx-auto">
-          <ListingGrid listings={filteredListings} loading={loading} />
+          {/* Error State */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center">
+                <div className="text-red-600 text-sm">
+                  <strong>Error loading listings:</strong> {error}
+                </div>
+                <button
+                  onClick={loadContent}
+                  className="ml-4 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Listings Grid */}
+          <ListingGrid listings={displayListings} loading={loading} />
+          
+          {/* Empty State */}
+          {!loading && !error && displayListings.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-gray-500 text-lg mb-2">No listings found</div>
+              <div className="text-gray-400 text-sm mb-4">
+                Try adjusting your search criteria or browse all categories
+              </div>
+              <button
+                onClick={() => {
+                  setSearchTerm('')
+                  setLocation('')
+                  setDate('')
+                  setPriceRange({ min: 0, max: 1000 })
+                  setAvailability('all')
+                  setSortBy('trending')
+                  setSelectedTags([])
+                }}
+                className="px-4 py-2 bg-black dark:bg-gray-700 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
         </div>
       </main>
 

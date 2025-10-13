@@ -9,7 +9,7 @@ import { ShieldCheck, ShieldAlert } from 'lucide-react';
 const ProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const { posts } = usePosts();
-  const { currentUser, logout } = useAuth();
+  const { user: currentUser, signOut: logout } = useAuth();
   const navigate = useNavigate();
 
   // Determine which user to display. If a userId is in the URL, find that user. Otherwise, show the logged-in user.

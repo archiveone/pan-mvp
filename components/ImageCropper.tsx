@@ -1,168 +1,216 @@
-'use client';
+'use client'
 
-import React, { useState, useRef, useCallback } from 'react';
-import { X, Check, Loader2 } from 'lucide-react';
+import React, { useState, useRef } from 'react'
+import ReactCrop, { Crop, PixelCrop } from 'react-image-crop'
+import { X, Check } from 'lucide-react'
 
 interface ImageCropperProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onCropComplete: (croppedFile: File) => void;
-  imageFile: File;
+  imageSrc: string
+  onCropComplete: (croppedImageBlob: Blob) => void
+  onCancel: () => void
 }
 
-export default function ImageCropper({ isOpen, onClose, onCropComplete, imageFile }: ImageCropperProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: ImageCropperProps) {
+  console.log('🎨 ImageCropper rendered with imageSrc:', imageSrc ? 'present' : 'missing')
+  
+  const imgRef = useRef<HTMLImageElement>(null)
+  const [crop, setCrop] = useState<Crop>({
+    unit: '%',
+    width: 100,
+    height: 100,
+    x: 0,
+    y: 0
+  })
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>()
 
-  const createSquareImage = useCallback(async (): Promise<File> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) {
-          reject(new Error('Canvas not found'));
-          return;
+  // Initialize crop as square when image loads
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget
+    const size = Math.min(width, height)
+    const x = (width - size) / 2
+    const y = (height - size) / 2
+
+    const initialCrop = {
+      unit: 'px' as const,
+      width: size,
+      height: size,
+      x,
+      y
+    }
+
+    setCrop(initialCrop)
+    setCompletedCrop(initialCrop)
+  }
+
+  const getCroppedImg = async (): Promise<Blob | null> => {
+    console.log('🎨 getCroppedImg called')
+    
+    if (!imgRef.current) {
+      console.warn('⚠️ Missing image ref')
+      return null
+    }
+
+    const image = imgRef.current
+    
+    // Use completedCrop if available, otherwise fall back to current crop
+    let pixelCrop = completedCrop
+    
+    // If no completedCrop, convert the current crop to pixels
+    if (!pixelCrop && crop) {
+      if (crop.unit === '%') {
+        pixelCrop = {
+          unit: 'px',
+          x: (crop.x / 100) * image.width,
+          y: (crop.y / 100) * image.height,
+          width: (crop.width / 100) * image.width,
+          height: (crop.height / 100) * image.height
         }
+      } else {
+        pixelCrop = crop as PixelCrop
+      }
+    }
+    
+    if (!pixelCrop || !pixelCrop.width || !pixelCrop.height) {
+      console.warn('⚠️ Invalid crop dimensions:', pixelCrop)
+      return null
+    }
 
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Canvas context not found'));
-          return;
-        }
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
 
-        // Set canvas to a standard square size (e.g., 1024x1024)
-        const size = 1024;
-        canvas.width = size;
-        canvas.height = size;
+    if (!ctx) {
+      console.error('❌ Could not get canvas context')
+      return null
+    }
+    
+    console.log('✅ Starting crop with dimensions:', pixelCrop)
 
-        // Clear canvas with white background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, size, size);
+    const scaleX = image.naturalWidth / image.width
+    const scaleY = image.naturalHeight / image.height
 
-        // Calculate scaling to fit image within square while maintaining aspect ratio
-        const scale = Math.min(size / img.width, size / img.height);
-        const scaledWidth = img.width * scale;
-        const scaledHeight = img.height * scale;
+    // Calculate the cropped area in natural image coordinates
+    const cropWidth = pixelCrop.width * scaleX
+    const cropHeight = pixelCrop.height * scaleY
+    
+    // Determine the final square size based on the larger dimension
+    const squareSize = Math.max(cropWidth, cropHeight)
+    
+    // Set canvas to square dimensions
+    canvas.width = squareSize
+    canvas.height = squareSize
 
-        // Center the image
-        const x = (size - scaledWidth) / 2;
-        const y = (size - scaledHeight) / 2;
+    // Fill with white background
+    ctx.fillStyle = '#FFFFFF'
+    ctx.fillRect(0, 0, squareSize, squareSize)
+    
+    ctx.imageSmoothingQuality = 'high'
 
-        // Draw the image centered with white borders if needed
-        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+    // Calculate position to center the image in the square
+    const offsetX = (squareSize - cropWidth) / 2
+    const offsetY = (squareSize - cropHeight) / 2
 
-        // Convert to blob
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const file = new File([blob], imageFile.name, { type: 'image/jpeg' });
-              resolve(file);
-            } else {
-              reject(new Error('Failed to create blob'));
-            }
-          },
-          'image/jpeg',
-          0.9
-        );
-      };
-      
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = URL.createObjectURL(imageFile);
-    });
-  }, [imageFile]);
+    // Draw the cropped image centered with letterboxing
+    ctx.drawImage(
+      image,
+      pixelCrop.x * scaleX,
+      pixelCrop.y * scaleY,
+      cropWidth,
+      cropHeight,
+      offsetX,
+      offsetY,
+      cropWidth,
+      cropHeight
+    )
+
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            console.log('✅ Blob created successfully, size:', blob.size)
+          }
+          resolve(blob)
+        },
+        'image/jpeg',
+        0.95
+      )
+    })
+  }
 
   const handleCropComplete = async () => {
-    setIsProcessing(true);
+    console.log('🔘 Apply Crop clicked')
+    console.log('📐 Current crop:', crop)
+    console.log('📐 Completed crop:', completedCrop)
+    console.log('📐 Image ref:', imgRef.current ? 'present' : 'missing')
+    
     try {
-      const croppedFile = await createSquareImage();
-      onCropComplete(croppedFile);
-      onClose();
+      const croppedBlob = await getCroppedImg()
+      console.log('✅ Cropped blob result:', croppedBlob ? `success (${croppedBlob.size} bytes)` : 'failed')
+      
+      if (croppedBlob) {
+        onCropComplete(croppedBlob)
+      } else {
+        console.error('❌ No cropped blob created')
+        alert('Failed to crop image. Please try again.')
+      }
     } catch (error) {
-      console.error('Error cropping image:', error);
-    } finally {
-      setIsProcessing(false);
+      console.error('❌ Error during crop:', error)
+      alert('Error cropping image. Please try again.')
     }
-  };
-
-  if (!isOpen) return null;
+  }
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">Crop to Square</h3>
-              <p className="text-sm text-gray-600 mt-1">Your image will be automatically centered</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <X size={20} />
-            </button>
-          </div>
+        <div className="bg-gradient-to-r from-lime-400 to-lime-300 p-4 flex items-center justify-between">
+          <h3 className="text-black font-semibold">Adjust Image</h3>
+          <button
+            onClick={onCancel}
+            className="w-8 h-8 bg-white/20 text-black rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors"
+          >
+            <X size={16} />
+          </button>
         </div>
 
-        {/* Preview */}
-        <div className="p-6 bg-gray-50">
-          <div className="flex justify-center">
-            <div className="relative w-64 h-64 bg-white border-4 border-blue-500 rounded-lg shadow-lg overflow-hidden">
-              <img
-                src={URL.createObjectURL(imageFile)}
-                alt="Preview"
-                className="w-full h-full object-contain"
-              />
-              <div className="absolute -top-2 -left-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full"></div>
-              <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full"></div>
-              <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full"></div>
-              <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full"></div>
-            </div>
-          </div>
-          
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">
-              ✨ Your image will fit perfectly in a square with white borders if needed
-            </p>
-          </div>
+        {/* Crop Area */}
+        <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+          <ReactCrop
+            crop={crop}
+            onChange={(c) => setCrop(c)}
+            onComplete={(c) => setCompletedCrop(c)}
+            aspect={1}
+            circularCrop={false}
+          >
+            <img
+              ref={imgRef}
+              src={imageSrc}
+              alt="Crop preview"
+              onLoad={onImageLoad}
+              style={{ maxHeight: '60vh', maxWidth: '100%' }}
+            />
+          </ReactCrop>
         </div>
 
-        {/* Actions */}
-        <div className="p-6 border-t border-gray-200 bg-gray-50">
-          <div className="flex gap-3">
+        {/* Footer */}
+        <div className="p-4 bg-gray-50 dark:bg-gray-800 flex items-center justify-between border-t dark:border-gray-700">
+          <p className="text-sm text-gray-600 dark:text-gray-300">Drag to select area • White space added if needed</p>
+          <div className="flex gap-2">
             <button
-              onClick={onClose}
-              className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              onClick={onCancel}
+              className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleCropComplete}
-              disabled={isProcessing}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium flex items-center justify-center gap-2"
+              className="px-4 py-2 bg-gradient-to-r from-lime-400 to-lime-300 text-black rounded-lg hover:brightness-95 transition-all flex items-center gap-2"
             >
-              {isProcessing ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Check size={16} />
-                  Crop & Add
-                </>
-              )}
+              <Check size={16} />
+              Apply Crop
             </button>
           </div>
         </div>
-
-        {/* Hidden canvas for processing */}
-        <canvas
-          ref={canvasRef}
-          style={{ display: 'none' }}
-        />
       </div>
     </div>
-  );
+  )
 }

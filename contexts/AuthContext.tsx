@@ -75,8 +75,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           show_stats: true,
           show_followers: true,
           show_posts: true,
-          bio_safety_checked: false,
-          bio_is_safety_approved: false,
           created_at: new Date().toISOString()
         })
         return
@@ -94,22 +92,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           show_stats: true,
           show_followers: true,
           show_posts: true,
-          bio_safety_checked: false,
-          bio_is_safety_approved: false,
           created_at: new Date().toISOString()
         }
         
-        // Try to insert the profile into the database
+        // Try to insert the profile into the database with proper error handling
         try {
           const { error: insertError } = await supabase
             .from('profiles')
-            .insert(defaultProfile)
+            .upsert(defaultProfile, { onConflict: 'id' })
           
           if (insertError) {
             console.warn('Failed to create profile in database:', insertError.message)
+            // Don't fail - just use the default profile locally
+          } else {
+            console.log('Profile created successfully in database')
           }
         } catch (error) {
           console.warn('Error creating profile:', error)
+          // Don't fail - just use the default profile locally
         }
         
         setProfile(defaultProfile)

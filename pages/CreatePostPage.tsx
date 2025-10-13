@@ -21,7 +21,7 @@ const CreatePostPage: React.FC = () => {
   const [step, setStep] = useState(1);
   const [postType, setPostType] = useState<PostType | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | 'document' | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | 'audio' | 'document' | null>(null);
   const [documentName, setDocumentName] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -32,7 +32,7 @@ const CreatePostPage: React.FC = () => {
   const [duration, setDuration] = useState('');
 
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const { addPost } = usePosts();
 
   const handleSelectPostType = (type: PostType) => {
@@ -50,7 +50,13 @@ const CreatePostPage: React.FC = () => {
       } else {
         const previewUrl = URL.createObjectURL(file);
         setMediaPreview(previewUrl);
-        setMediaType(file.type.startsWith('video/') ? 'video' : 'image');
+        if (file.type.startsWith('video/')) {
+          setMediaType('video');
+        } else if (file.type.startsWith('audio/')) {
+          setMediaType('audio' as any);
+        } else {
+          setMediaType('image');
+        }
         setDocumentName(null);
       }
     }
@@ -74,19 +80,24 @@ const CreatePostPage: React.FC = () => {
 
     const newPost: Post = {
         id: `p${Date.now()}`,
-        user: currentUser,
+        user: {
+            ...currentUser,
+            name: '',
+            avatarUrl: '',
+            bio: ''
+        },
         postType,
         title: title || undefined,
         content,
-        imageUrl: mediaType === 'image' ? mediaPreview : undefined,
-        videoUrl: mediaType === 'video' ? mediaPreview : undefined,
+        imageUrl: mediaType === 'image' ? (mediaPreview ?? undefined) : undefined,
+        videoUrl: mediaType === 'video' ? (mediaPreview ?? undefined) : undefined,
         priceInfo: price ? { amount: parseFloat(price), unit: getPriceUnit() } : undefined,
         likes: 0,
         timestamp: new Date().toISOString(),
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         location: location || undefined,
         dateTime: dateTime || undefined,
-        bannerUrl: postType === 'COMMUNITY' ? mediaPreview : undefined,
+        bannerUrl: postType === 'COMMUNITY' ? (mediaPreview ?? undefined) : undefined,
         memberCount: postType === 'COMMUNITY' ? 1 : undefined,
         isLocked: postType === 'COMMUNITY' ? false : undefined,
         duration: duration || undefined,
@@ -171,6 +182,15 @@ const CreatePostPage: React.FC = () => {
                     className="w-full h-full object-contain bg-black" 
                     autoPlay loop muted playsInline
                   />
+                ) : mediaType === 'audio' ? (
+                  <div className="w-full h-full flex flex-col justify-center items-center p-4">
+                    <div className="text-pan-white mb-4">🎵 Audio File</div>
+                    <audio 
+                      src={mediaPreview} 
+                      controls 
+                      className="w-full max-w-md"
+                    />
+                  </div>
                 ) : (
                   <img src={mediaPreview} alt="Preview" className="w-full h-full object-cover" />
                 )}
@@ -182,10 +202,10 @@ const CreatePostPage: React.FC = () => {
             ) : (
               <label htmlFor="media-upload" className="cursor-pointer block w-full h-48 border-2 border-dashed border-pan-gray rounded-xl flex flex-col justify-center items-center text-pan-gray hover:border-pan-white hover:text-pan-white transition-colors">
                 <UploadCloud size={40} />
-                <span className="mt-2 font-semibold">{postType === 'DOCUMENT' ? 'Upload Document' : 'Upload Image or Video'}</span>
+                <span className="mt-2 font-semibold">{postType === 'DOCUMENT' ? 'Upload Document' : 'Upload Image, Video, or Audio'}</span>
               </label>
             )}
-            <input id="media-upload" type="file" className="hidden" onChange={handleMediaChange} accept={postType === 'DOCUMENT' ? '.pdf,.doc,.docx,.txt' : 'image/*,video/*'}/>
+            <input id="media-upload" type="file" className="hidden" onChange={handleMediaChange} accept={postType === 'DOCUMENT' ? '.pdf,.doc,.docx,.txt' : 'image/*,video/*,audio/*,.mp3,.wav,.m4a,.ogg,.flac'}/>
         </div>
         )}
 
