@@ -3,7 +3,46 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'implicit', // Use implicit flow for better compatibility
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined
+  },
+  global: {
+    headers: {
+      'x-application-name': 'pan-marketplace'
+    },
+    // Add fetch options for better timeout handling
+    fetch: (url, options = {}) => {
+      return fetch(url, {
+        ...options,
+        // Set reasonable timeout (30 seconds)
+        signal: AbortSignal.timeout(30000)
+      }).catch(error => {
+        console.error('Supabase request failed:', error);
+        throw error;
+      });
+    }
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+})
+
+// Connection health check
+export const checkConnection = async (): Promise<boolean> => {
+  try {
+    const { error } = await supabase.from('profiles').select('id').limit(1)
+    return !error
+  } catch {
+    return false
+  }
+}
 
 // Database types - comprehensive profile schema
 export interface Profile {

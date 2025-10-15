@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { useSavedPosts } from '@/hooks/useSavedListings'
 import PostInteractions from '@/components/PostInteractions'
 import CommentSection from '@/components/CommentSection'
+import AdvancedAnalyticsService from '@/services/advancedAnalyticsService'
 
 export default function ListingDetailPage() {
   const params = useParams()
@@ -49,6 +50,16 @@ export default function ListingDetailPage() {
       if (error) throw error
 
       setListing(data)
+
+      // Track view in analytics
+      const sessionId = AdvancedAnalyticsService.generateSessionId()
+      AdvancedAnalyticsService.trackView({
+        contentId: id,
+        userId: user?.id,
+        sessionId,
+        deviceType: typeof navigator !== 'undefined' && /mobile/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+        referrer: typeof document !== 'undefined' ? document.referrer : undefined,
+      })
 
       // Increment view count
       await supabase.rpc('increment_view_count', { content_id: id })

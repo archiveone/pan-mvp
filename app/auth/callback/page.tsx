@@ -13,29 +13,66 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        console.log('🔍 Auth callback triggered');
+        console.log('Current URL:', window.location.href);
+        
+        // For implicit flow, check hash for access_token
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        
+        if (accessToken) {
+          console.log('✅ Found access token in hash (implicit flow)');
+          // Let Supabase handle the session from hash automatically
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          const { data, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error('❌ Session error:', error);
+            setStatus('error');
+            setMessage('Authentication failed. Please try again.');
+            setTimeout(() => router.push('/login'), 3000);
+            return;
+          }
+
+          if (data.session) {
+            console.log('✅ Session created from implicit flow!');
+            setStatus('success');
+            setMessage('Successfully signed in! Redirecting...');
+            setTimeout(() => router.push('/'), 2000);
+            return;
+          }
+        }
+        
+        // Fallback: check existing session
         const { data, error } = await supabase.auth.getSession();
         
+        console.log('📊 Session check:', { data, error });
+        
         if (error) {
+          console.error('❌ Session error:', error);
           setStatus('error');
           setMessage('Authentication failed. Please try again.');
-          setTimeout(() => router.push('/'), 3000);
+          setTimeout(() => router.push('/login'), 3000);
           return;
         }
 
         if (data.session) {
+          console.log('✅ Session found!');
           setStatus('success');
-          setMessage('Successfully signed in! Redirecting to your hub...');
-          setTimeout(() => router.push('/hub'), 2000);
+          setMessage('Successfully signed in! Redirecting...');
+          setTimeout(() => router.push('/'), 2000);
         } else {
+          console.warn('⚠️ No session found');
           setStatus('error');
           setMessage('No session found. Please try signing in again.');
-          setTimeout(() => router.push('/'), 3000);
+          setTimeout(() => router.push('/login'), 3000);
         }
       } catch (error) {
-        console.error('Auth callback error:', error);
+        console.error('💥 Auth callback error:', error);
         setStatus('error');
         setMessage('An unexpected error occurred. Please try again.');
-        setTimeout(() => router.push('/'), 3000);
+        setTimeout(() => router.push('/login'), 3000);
       }
     };
 

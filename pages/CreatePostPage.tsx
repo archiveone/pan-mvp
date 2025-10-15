@@ -107,7 +107,7 @@ const CreatePostPage: React.FC = () => {
     
     try {
       // If Supabase configured, upload and insert
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
         let mediaUrl: string | undefined = undefined;
         if (mediaPreview && mediaType !== 'document') {
           const blob = await fetch(mediaPreview).then(r => r.blob());

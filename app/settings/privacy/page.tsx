@@ -1,376 +1,204 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Eye, EyeOff, Shield, Lock, User, Users, Globe } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { useState } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import AppHeader from '@/components/AppHeader'
+import AppFooter from '@/components/AppFooter'
+import { Shield, Download, Trash2, AlertCircle, CheckCircle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
-interface PrivacySettings {
-  profile_visibility: 'public' | 'private' | 'friends';
-  show_stats: boolean;
-  show_followers: boolean;
-  show_posts: boolean;
-  show_online_status: boolean;
-  allow_messages_from: 'everyone' | 'friends' | 'none';
-  show_email: boolean;
-  show_phone: boolean;
-  allow_search_indexing: boolean;
-  data_sharing: boolean;
-}
+export default function PrivacySettings() {
+  const { user } = useAuth()
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-const defaultPrivacySettings: PrivacySettings = {
-  profile_visibility: 'public',
-  show_stats: true,
-  show_followers: true,
-  show_posts: true,
-  show_online_status: true,
-  allow_messages_from: 'everyone',
-  show_email: false,
-  show_phone: false,
-  allow_search_indexing: true,
-  data_sharing: false,
-};
-
-export default function PrivacySettingsPage() {
-  const router = useRouter();
-  const { user, profile } = useAuth();
-  const [settings, setSettings] = useState<PrivacySettings>(defaultPrivacySettings);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (user && profile) {
-      loadPrivacySettings();
-    }
-  }, [user, profile]);
-
-  const loadPrivacySettings = async () => {
-    if (!user || !profile) return;
+  const handleExportData = async () => {
+    setLoading(true)
+    setMessage(null)
 
     try {
-      // Load settings from user profile
-      const userSettings = {
-        profile_visibility: profile.profile_visibility || 'public',
-        show_stats: profile.show_stats ?? true,
-        show_followers: profile.show_followers ?? true,
-        show_posts: profile.show_posts ?? true,
-        show_online_status: true, // Default
-        allow_messages_from: 'everyone' as const,
-        show_email: false, // Default
-        show_phone: false, // Default
-        allow_search_indexing: true, // Default
-        data_sharing: false, // Default
-      };
+      const response = await fetch('/api/export-data', {
+        method: 'POST',
+      })
 
-      setSettings(userSettings);
+      if (!response.ok) {
+        throw new Error('Failed to export data')
+      }
+
+      // Download the file
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `pan-data-export-${Date.now()}.json`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      setMessage({ type: 'success', text: 'Your data has been exported successfully!' })
     } catch (error) {
-      console.error('Error loading privacy settings:', error);
-      setSettings(defaultPrivacySettings);
+      console.error('Export error:', error)
+      setMessage({ type: 'error', text: 'Failed to export data. Please try again.' })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
-
-  const savePrivacySettings = async (updatedSettings: Partial<PrivacySettings>) => {
-    if (!user) return;
-
-    setSaving(true);
-    try {
-      const newSettings = { ...settings, ...updatedSettings };
-      setSettings(newSettings);
-
-      // Update profile with new privacy settings
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          profile_visibility: newSettings.profile_visibility,
-          show_stats: newSettings.show_stats,
-          show_followers: newSettings.show_followers,
-          show_posts: newSettings.show_posts,
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      alert('Privacy settings saved successfully!');
-    } catch (error) {
-      console.error('Error saving privacy settings:', error);
-      alert('Failed to save privacy settings. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const toggleSetting = (key: keyof PrivacySettings) => {
-    if (key === 'profile_visibility' || key === 'allow_messages_from') {
-      return; // These are handled by select dropdowns
-    }
-    savePrivacySettings({ [key]: !settings[key] });
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
   }
 
-  const privacyCategories = [
-    {
-      title: 'Profile Visibility',
-      icon: Eye,
-      description: 'Control who can see your profile information',
-      settings: [
-        {
-          type: 'select',
-          key: 'profile_visibility' as const,
-          title: 'Profile Visibility',
-          description: 'Choose who can view your profile',
-          options: [
-            { value: 'public', label: 'Public - Anyone can see your profile' },
-            { value: 'friends', label: 'Friends Only - Only your connections can see' },
-            { value: 'private', label: 'Private - Only you can see your profile' },
-          ],
-        },
-      ],
-    },
-    {
-      title: 'Information Sharing',
-      icon: User,
-      description: 'Control what information is visible on your profile',
-      settings: [
-        {
-          type: 'toggle',
-          key: 'show_stats' as const,
-          title: 'Show Activity Statistics',
-          description: 'Display your activity stats on your profile',
-          icon: Shield,
-        },
-        {
-          type: 'toggle',
-          key: 'show_followers' as const,
-          title: 'Show Follower Count',
-          description: 'Display your follower count publicly',
-          icon: Users,
-        },
-        {
-          type: 'toggle',
-          key: 'show_posts' as const,
-          title: 'Show Posts Publicly',
-          description: 'Display your posts on your public profile',
-          icon: Globe,
-        },
-        {
-          type: 'toggle',
-          key: 'show_online_status' as const,
-          title: 'Show Online Status',
-          description: 'Let others see when you are online',
-          icon: Eye,
-        },
-      ],
-    },
-    {
-      title: 'Communication',
-      icon: Lock,
-      description: 'Control who can contact you and how',
-      settings: [
-        {
-          type: 'select',
-          key: 'allow_messages_from' as const,
-          title: 'Allow Messages From',
-          description: 'Choose who can send you direct messages',
-          options: [
-            { value: 'everyone', label: 'Everyone - Anyone can message you' },
-            { value: 'friends', label: 'Friends Only - Only your connections' },
-            { value: 'none', label: 'No One - Disable direct messages' },
-          ],
-        },
-      ],
-    },
-    {
-      title: 'Contact Information',
-      icon: EyeOff,
-      description: 'Control the visibility of your contact details',
-      settings: [
-        {
-          type: 'toggle',
-          key: 'show_email' as const,
-          title: 'Show Email Address',
-          description: 'Display your email address on your profile',
-          icon: Eye,
-        },
-        {
-          type: 'toggle',
-          key: 'show_phone' as const,
-          title: 'Show Phone Number',
-          description: 'Display your phone number on your profile',
-          icon: Eye,
-        },
-      ],
-    },
-    {
-      title: 'Search & Discovery',
-      icon: Globe,
-      description: 'Control how others can find and discover you',
-      settings: [
-        {
-          type: 'toggle',
-          key: 'allow_search_indexing' as const,
-          title: 'Allow Search Indexing',
-          description: 'Allow search engines to index your profile',
-          icon: Globe,
-        },
-      ],
-    },
-  ];
+  const handleDeleteAccount = async () => {
+    if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      return
+    }
+
+    const confirmText = prompt('Type "DELETE" to confirm account deletion:')
+    if (confirmText !== 'DELETE') {
+      return
+    }
+
+    setLoading(true)
+    setMessage(null)
+
+    try {
+      // TODO: Implement account deletion API
+      // This should:
+      // 1. Delete all user content
+      // 2. Delete user profile
+      // 3. Sign out user
+      // 4. Delete auth account
+
+      alert('Account deletion will be implemented soon. Please contact support.')
+    } catch (error) {
+      console.error('Delete error:', error)
+      setMessage({ type: 'error', text: 'Failed to delete account. Please contact support.' })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <button
-                onClick={() => router.back()}
-                className="mr-4 p-2 text-gray-400 hover:text-gray-600"
-              >
-                <ArrowLeft size={20} />
-              </button>
-              <h1 className="text-xl font-semibold text-gray-900">Privacy Settings</h1>
-            </div>
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      <AppHeader />
+
+      <main className="max-w-4xl mx-auto px-4 py-12">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="w-8 h-8 text-gray-900 dark:text-white" />
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Privacy & Data
+            </h1>
           </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Privacy Notice */}
-        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <Shield className="h-5 w-5 text-blue-400" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800">Your Privacy Matters</h3>
-              <div className="mt-2 text-sm text-blue-700">
-                <p>
-                  We respect your privacy and give you control over your personal information. 
-                  Your data is encrypted and stored securely. We never share your personal 
-                  information with third parties without your explicit consent.
-                </p>
-              </div>
-            </div>
-          </div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Manage your privacy settings and data
+          </p>
         </div>
 
-        <div className="space-y-6">
-          {privacyCategories.map((category) => {
-            const Icon = category.icon;
-            return (
-              <div key={category.title} className="bg-white shadow rounded-lg">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <div className="flex items-center">
-                    <Icon size={20} className="mr-3 text-gray-500" />
-                    <div>
-                      <h2 className="text-lg font-medium text-gray-900">{category.title}</h2>
-                      <p className="text-sm text-gray-500">{category.description}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="px-6 py-6">
-                  <div className="space-y-6">
-                    {category.settings.map((setting) => {
-                      const SettingIcon = setting.icon;
-                      
-                      if (setting.type === 'select') {
-                        return (
-                          <div key={setting.key}>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              {setting.title}
-                            </label>
-                            <p className="text-sm text-gray-500 mb-3">{setting.description}</p>
-                            <select
-                              value={settings[setting.key]}
-                              onChange={(e) => savePrivacySettings({ [setting.key]: e.target.value })}
-                              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            >
-                              {setting.options?.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div key={setting.key} className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            {SettingIcon && (
-                              <SettingIcon size={20} className="mr-3 text-gray-400" />
-                            )}
-                            <div>
-                              <h3 className="text-sm font-medium text-gray-900">
-                                {setting.title}
-                              </h3>
-                              <p className="text-sm text-gray-500">
-                                {setting.description}
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => toggleSetting(setting.key)}
-                            disabled={saving}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 ${
-                              settings[setting.key] ? 'bg-blue-600' : 'bg-gray-200'
-                            }`}
-                          >
-                            <span
-                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                settings[setting.key] ? 'translate-x-5' : 'translate-x-0'
-                              }`}
-                            />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Data Protection Notice */}
-        <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <Lock className="h-5 w-5 text-green-400" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-green-800">Data Protection</h3>
-              <div className="mt-2 text-sm text-green-700">
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Your personal data is encrypted using industry-standard encryption</li>
-                  <li>We comply with GDPR and other privacy regulations</li>
-                  <li>You can request a copy of your data or delete your account at any time</li>
-                  <li>We never sell your personal information to third parties</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {saving && (
-          <div className="mt-4 text-center">
-            <div className="text-sm text-blue-600">Saving privacy settings...</div>
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg flex items-start gap-3 ${
+            message.type === 'success' 
+              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+          }`}>
+            {message.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+            )}
+            <p className={message.type === 'success' 
+              ? 'text-green-800 dark:text-green-200' 
+              : 'text-red-800 dark:text-red-200'
+            }>
+              {message.text}
+            </p>
           </div>
         )}
-      </div>
+
+        <div className="space-y-6">
+          {/* Export Data */}
+          <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                <Download className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Export Your Data
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Download a copy of all your data including posts, messages, profile information, and more.
+                  You'll receive a JSON file with all your information.
+                </p>
+                <button
+                  onClick={handleExportData}
+                  disabled={loading}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                >
+                  <Download className="w-5 h-5" />
+                  {loading ? 'Exporting...' : 'Export Data'}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Data Retention */}
+          <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+              Data Retention
+            </h2>
+            <div className="space-y-2 text-gray-600 dark:text-gray-400">
+              <p>We retain your data as long as your account is active.</p>
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                <li>Profile data: Retained until account deletion</li>
+                <li>Posts and listings: 7 days after deletion</li>
+                <li>Messages: 30 days after deletion</li>
+                <li>Activity logs: 90 days</li>
+              </ul>
+            </div>
+          </section>
+
+          {/* Privacy Rights */}
+          <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+              Your Privacy Rights
+            </h2>
+            <ul className="space-y-2 text-gray-600 dark:text-gray-400 list-disc list-inside ml-4">
+              <li>Right to access your personal data</li>
+              <li>Right to correct inaccurate data</li>
+              <li>Right to delete your data</li>
+              <li>Right to data portability</li>
+              <li>Right to object to data processing</li>
+              <li>Right to withdraw consent</li>
+            </ul>
+          </section>
+
+          {/* Delete Account */}
+          <section className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-xl">
+                <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Delete Account
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={loading}
+                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <AppFooter />
     </div>
-  );
+  )
 }

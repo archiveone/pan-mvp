@@ -1,351 +1,393 @@
-// Account Verification Service
-// Handles identity verification, business verification, and age verification
-
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase';
 
 export interface VerificationRequest {
-  id: string
-  user_id: string
-  verification_type: 'identity' | 'business' | 'phone' | 'email'
-  status: 'pending' | 'approved' | 'rejected' | 'expired'
-  documents?: any
-  rejection_reason?: string
-  verified_by?: string
-  expires_at?: string
-  created_at: string
+  verificationType: 'individual' | 'business' | 'creator' | 'enterprise';
+  fullName?: string;
+  dateOfBirth?: string;
+  governmentIdType?: string;
+  governmentIdNumber?: string;
+  businessName?: string;
+  businessRegistrationNumber?: string;
+  businessType?: string;
+  businessWebsite?: string;
+  taxId?: string;
+  phoneNumber?: string;
 }
 
-export interface IdentityDocument {
-  type: 'passport' | 'drivers_license' | 'national_id'
-  front_image: string
-  back_image?: string
-  full_name: string
-  date_of_birth: string
-  document_number: string
-  expiry_date?: string
-}
-
-export interface BusinessDocument {
-  type: 'business_license' | 'tax_certificate' | 'registration'
-  document_image: string
-  business_name: string
-  business_number: string
-  address: string
-  contact_person: string
+export interface VerificationBadge {
+  badgeType: string;
+  badgeName: string;
+  badgeDescription: string;
+  badgeIcon: string;
+  badgeColor: string;
+  earnedAt: Date;
 }
 
 class VerificationService {
-  // Create identity verification request
-  async createIdentityVerification(
+  // Submit verification request
+  async submitVerificationRequest(
     userId: string,
-    document: IdentityDocument
-  ): Promise<{ success: boolean; requestId?: string; error?: string }> {
-    try {
-      const { data, error } = await supabase
-        .from('verification_requests')
-        .insert({
-          user_id: userId,
-          verification_type: 'identity',
-          status: 'pending',
-          documents: document,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      return { success: true, requestId: data.id }
-    } catch (error) {
-      console.error('Error creating identity verification:', error)
-      return { success: false, error: error.message }
+    data: VerificationRequest,
+    documents: {
+      idDocument?: File;
+      businessLicense?: File;
+      proofOfAddress?: File;
     }
-  }
-
-  // Create business verification request
-  async createBusinessVerification(
-    userId: string,
-    document: BusinessDocument
-  ): Promise<{ success: boolean; requestId?: string; error?: string }> {
+  ) {
     try {
+      // Upload documents to storage
+      const uploadedDocs: any = {};
+
+      if (documents.idDocument) {
+        const { data: idDoc, error: idError } = await supabase.storage
+          .from('verification-documents')
+          .upload(`${userId}/id-${Date.now()}.pdf`, documents.idDocument);
+        
+        if (idError) throw idError;
+        uploadedDocs.id_document_url = idDoc.path;
+      }
+
+      if (documents.businessLicense) {
+        const { data: bizDoc, error: bizError } = await supabase.storage
+          .from('verification-documents')
+          .upload(`${userId}/business-${Date.now()}.pdf`, documents.businessLicense);
+        
+        if (bizError) throw bizError;
+        uploadedDocs.business_license_url = bizDoc.path;
+      }
+
+      if (documents.proofOfAddress) {
+        const { data: addressDoc, error: addressError } = await supabase.storage
+          .from('verification-documents')
+          .upload(`${userId}/address-${Date.now()}.pdf`, documents.proofOfAddress);
+        
+        if (addressError) throw addressError;
+        uploadedDocs.proof_of_address_url = addressDoc.path;
+      }
+
+      // Create verification request
       const { data, error } = await supabase
-        .from('verification_requests')
-        .insert({
+        .from('profile_verifications')
+        .upsert({
           user_id: userId,
-          verification_type: 'business',
-          status: 'pending',
-          documents: document,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
+          verification_type: data.verificationType,
+          verification_status: 'pending',
+          full_name: data.fullName,
+          date_of_birth: data.dateOfBirth,
+          government_id_type: data.governmentIdType,
+          government_id_number: data.governmentIdNumber,
+          business_name: data.businessName,
+          business_registration_number: data.businessRegistrationNumber,
+          business_type: data.businessType,
+          business_website: data.businessWebsite,
+          tax_id: data.taxId,
+          phone_number: data.phoneNumber,
+          submitted_at: new Date().toISOString(),
+          ...uploadedDocs
         })
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
+      if (error) throw error;
 
-      return { success: true, requestId: data.id }
+      // Create notification for user
+      await this.createNotification(
+        userId,
+        'verification_submitted',
+        'Verification Request Submitted',
+        'Your verification request has been submitted and is under review. We\'ll notify you once it\'s processed.',
+        '/settings/verification'
+      );
+
+      return { success: true, data };
     } catch (error) {
-      console.error('Error creating business verification:', error)
-      return { success: false, error: error.message }
-    }
-  }
-
-  // Create phone verification request
-  async createPhoneVerification(
-    userId: string,
-    phoneNumber: string
-  ): Promise<{ success: boolean; requestId?: string; error?: string }> {
-    try {
-      const { data, error } = await supabase
-        .from('verification_requests')
-        .insert({
-          user_id: userId,
-          verification_type: 'phone',
-          status: 'pending',
-          documents: { phone_number: phoneNumber },
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      return { success: true, requestId: data.id }
-    } catch (error) {
-      console.error('Error creating phone verification:', error)
-      return { success: false, error: error.message }
-    }
-  }
-
-  // Create email verification request
-  async createEmailVerification(
-    userId: string,
-    email: string
-  ): Promise<{ success: boolean; requestId?: string; error?: string }> {
-    try {
-      const { data, error } = await supabase
-        .from('verification_requests')
-        .insert({
-          user_id: userId,
-          verification_type: 'email',
-          status: 'pending',
-          documents: { email: email },
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      return { success: true, requestId: data.id }
-    } catch (error) {
-      console.error('Error creating email verification:', error)
-      return { success: false, error: error.message }
+      console.error('Error submitting verification:', error);
+      return { success: false, error };
     }
   }
 
   // Get user's verification status
-  async getUserVerificationStatus(userId: string): Promise<{
-    identity: boolean
-    business: boolean
-    phone: boolean
-    email: boolean
-    age: boolean
-  }> {
+  async getVerificationStatus(userId: string) {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('is_verified, age_verified, phone_verified, email_verified')
-        .eq('id', userId)
-        .single()
-
-      if (error) throw error
-
-      return {
-        identity: data.is_verified || false,
-        business: data.is_verified || false, // Business verification uses same flag
-        phone: data.phone_verified || false,
-        email: data.email_verified || false,
-        age: data.age_verified || false
-      }
-    } catch (error) {
-      console.error('Error getting verification status:', error)
-      return {
-        identity: false,
-        business: false,
-        phone: false,
-        email: false,
-        age: false
-      }
-    }
-  }
-
-  // Get pending verification requests
-  async getPendingVerifications(): Promise<VerificationRequest[]> {
-    try {
-      const { data, error } = await supabase
-        .from('verification_requests')
-        .select(`
-          *,
-          profiles!verification_requests_user_id_fkey (
-            display_name,
-            avatar_url
-          )
-        `)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-      return data || []
-    } catch (error) {
-      console.error('Error getting pending verifications:', error)
-      return []
-    }
-  }
-
-  // Approve verification request
-  async approveVerification(
-    requestId: string,
-    approvedBy: string
-  ): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Get the verification request
-      const { data: request, error: fetchError } = await supabase
-        .from('verification_requests')
+        .from('profile_verifications')
         .select('*')
-        .eq('id', requestId)
-        .single()
+        .eq('user_id', userId)
+        .single();
 
-      if (fetchError) throw fetchError
+      if (error && error.code !== 'PGRST116') throw error;
 
-      // Update verification request
-      const { error: updateError } = await supabase
-        .from('verification_requests')
-        .update({
-          status: 'approved',
-          verified_by: approvedBy,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', requestId)
-
-      if (updateError) throw updateError
-
-      // Update user profile based on verification type
-      const profileUpdates: any = {}
-      
-      switch (request.verification_type) {
-        case 'identity':
-          profileUpdates.is_verified = true
-          profileUpdates.age_verified = true
-          break
-        case 'business':
-          profileUpdates.is_verified = true
-          profileUpdates.is_business = true
-          break
-        case 'phone':
-          profileUpdates.phone_verified = true
-          break
-        case 'email':
-          profileUpdates.email_verified = true
-          break
-      }
-
-      if (Object.keys(profileUpdates).length > 0) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update(profileUpdates)
-          .eq('id', request.user_id)
-
-        if (profileError) throw profileError
-      }
-
-      return { success: true }
+      return { success: true, data: data || null };
     } catch (error) {
-      console.error('Error approving verification:', error)
-      return { success: false, error: error.message }
+      console.error('Error getting verification status:', error);
+      return { success: false, error };
     }
   }
 
-  // Reject verification request
-  async rejectVerification(
-    requestId: string,
-    rejectedBy: string,
-    reason: string
-  ): Promise<{ success: boolean; error?: string }> {
+  // Get user's badges
+  async getUserBadges(userId: string): Promise<VerificationBadge[]> {
+    try {
+      const { data, error } = await supabase
+        .from('verification_badges')
+        .select('*')
+        .eq('user_id', userId)
+        .order('earned_at', { ascending: false });
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      console.error('Error getting badges:', error);
+      return [];
+    }
+  }
+
+  // Award badge to user
+  async awardBadge(
+    userId: string,
+    badgeType: string,
+    badgeName: string,
+    description: string,
+    icon: string = '✓',
+    color: string = 'blue'
+  ) {
+    try {
+      const { data, error } = await supabase
+        .from('verification_badges')
+        .insert({
+          user_id: userId,
+          badge_type: badgeType,
+          badge_name: badgeName,
+          badge_description: description,
+          badge_icon: icon,
+          badge_color: color
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Notify user of new badge
+      await this.createNotification(
+        userId,
+        'achievement',
+        `New Badge Earned: ${badgeName}`,
+        description,
+        '/profile',
+        'high'
+      );
+
+      return { success: true, data };
+    } catch (error: any) {
+      // Ignore duplicate badge errors
+      if (error?.code === '23505') {
+        return { success: true, data: null };
+      }
+      console.error('Error awarding badge:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Verify email
+  async verifyEmail(userId: string) {
     try {
       const { error } = await supabase
-        .from('verification_requests')
-        .update({
-          status: 'rejected',
-          verified_by: rejectedBy,
-          rejection_reason: reason,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', requestId)
+        .from('profile_verifications')
+        .upsert({
+          user_id: userId,
+          email_verified: true
+        });
 
-      if (error) throw error
+      if (error) throw error;
 
-      return { success: true }
+      // Award email verification badge
+      await this.awardBadge(
+        userId,
+        'verified',
+        'Email Verified',
+        'Verified email address',
+        '✉️',
+        'green'
+      );
+
+      return { success: true };
     } catch (error) {
-      console.error('Error rejecting verification:', error)
-      return { success: false, error: error.message }
+      console.error('Error verifying email:', error);
+      return { success: false, error };
     }
   }
 
-  // Check if user needs age verification for content
-  async requiresAgeVerification(userId: string, contentRating: string): Promise<boolean> {
+  // Verify phone
+  async verifyPhone(userId: string, phoneNumber: string) {
+    try {
+      const { error } = await supabase
+        .from('profile_verifications')
+        .upsert({
+          user_id: userId,
+          phone_verified: true,
+          phone_number: phoneNumber
+        });
+
+      if (error) throw error;
+
+      // Award phone verification badge
+      await this.awardBadge(
+        userId,
+        'verified',
+        'Phone Verified',
+        'Verified phone number',
+        '📱',
+        'green'
+      );
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error verifying phone:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Check if user is verified
+  async isUserVerified(userId: string): Promise<boolean> {
     try {
       const { data } = await supabase
-        .from('profiles')
-        .select('age_verified')
-        .eq('id', userId)
-        .single()
+        .from('profile_verifications')
+        .select('verification_status, verification_level')
+        .eq('user_id', userId)
+        .single();
 
-      const isAgeVerified = data?.age_verified || false
-      
-      // Require age verification for R, NC-17, 18+ content
-      const requiresVerification = ['R', 'NC-17', '18+'].includes(contentRating)
-      
-      return requiresVerification && !isAgeVerified
+      return data?.verification_status === 'verified' && 
+             data?.verification_level !== 'none';
     } catch (error) {
-      console.error('Error checking age verification:', error)
-      return true // Default to requiring verification
+      return false;
     }
   }
 
-  // Get verification requirements for content type
-  getVerificationRequirements(contentType: string): {
-    identity: boolean
-    business: boolean
-    age: boolean
-  } {
-    const requirements = {
-      identity: false,
-      business: false,
-      age: false
-    }
+  // Get verification badge icon for display
+  getVerificationIcon(verificationLevel: string): string {
+    const icons: { [key: string]: string } = {
+      email: '✉️',
+      phone: '📱',
+      identity: '🆔',
+      business: '🏢',
+      premium: '⭐'
+    };
+    return icons[verificationLevel] || '✓';
+  }
 
-    switch (contentType) {
-      case 'marketplace_item':
-        requirements.identity = true
-        break
-      case 'music_album':
-      case 'video_content':
-      case 'movie':
-        requirements.identity = true
-        requirements.age = true
-        break
-      case 'event':
-      case 'gig':
-        requirements.identity = true
-        break
-      case 'service':
-        requirements.identity = true
-        requirements.business = true
-        break
+  // Helper to create notification
+  private async createNotification(
+    userId: string,
+    type: string,
+    title: string,
+    message: string,
+    actionUrl?: string,
+    priority: string = 'normal'
+  ) {
+    try {
+      await supabase.rpc('create_notification', {
+        p_user_id: userId,
+        p_type: type,
+        p_title: title,
+        p_message: message,
+        p_action_url: actionUrl,
+        p_priority: priority
+      });
+    } catch (error) {
+      console.error('Error creating notification:', error);
     }
+  }
 
-    return requirements
+  // Admin: Approve verification
+  async approveVerification(
+    userId: string,
+    reviewerId: string,
+    verificationLevel: 'email' | 'phone' | 'identity' | 'business' | 'premium'
+  ) {
+    try {
+      const { error } = await supabase
+        .from('profile_verifications')
+        .update({
+          verification_status: 'verified',
+          verification_level: verificationLevel,
+          verified_at: new Date().toISOString(),
+          reviewed_by: reviewerId,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      // Award verified badge
+      const badgeNames: { [key: string]: string } = {
+        email: 'Email Verified',
+        phone: 'Phone Verified',
+        identity: 'Identity Verified',
+        business: 'Business Verified',
+        premium: 'Premium Verified'
+      };
+
+      await this.awardBadge(
+        userId,
+        verificationLevel === 'business' ? 'business_verified' : 'verified',
+        badgeNames[verificationLevel],
+        `Successfully verified as ${verificationLevel}`,
+        this.getVerificationIcon(verificationLevel),
+        verificationLevel === 'premium' ? 'gold' : 'blue'
+      );
+
+      // Notify user
+      await this.createNotification(
+        userId,
+        'verification_approved',
+        'Verification Approved! ✓',
+        `Congratulations! Your ${verificationLevel} verification has been approved.`,
+        '/profile',
+        'high'
+      );
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error approving verification:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Admin: Reject verification
+  async rejectVerification(
+    userId: string,
+    reviewerId: string,
+    reason: string
+  ) {
+    try {
+      const { error } = await supabase
+        .from('profile_verifications')
+        .update({
+          verification_status: 'rejected',
+          rejection_reason: reason,
+          reviewed_by: reviewerId,
+          reviewed_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      // Notify user
+      await this.createNotification(
+        userId,
+        'warning',
+        'Verification Request Update',
+        `Your verification request was not approved. Reason: ${reason}`,
+        '/settings/verification',
+        'high'
+      );
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error rejecting verification:', error);
+      return { success: false, error };
+    }
   }
 }
 
-export const verificationService = new VerificationService()
+export const verificationService = new VerificationService();

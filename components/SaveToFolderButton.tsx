@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { FolderPlus, Check, X, Star } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdvancedHubService, HubBox } from '@/services/advancedHubService';
+import AdvancedAnalyticsService from '@/services/advancedAnalyticsService';
 
 interface SaveToFolderButtonProps {
   itemId: string;
@@ -82,6 +83,16 @@ export default function SaveToFolderButton({ itemId, itemType = 'post', compact 
         if (result.success) {
           console.log('✅ Item added to folder successfully!');
           setSavedFolders(prev => new Set(prev).add(folderId));
+          
+          // Track save analytics
+          const sessionId = AdvancedAnalyticsService.generateSessionId();
+          AdvancedAnalyticsService.trackView({
+            contentId: itemId,
+            userId: user.id,
+            sessionId,
+            saved: true,
+            deviceType: typeof navigator !== 'undefined' && /mobile/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+          });
         } else {
           console.error('❌ Failed to add:', result.error);
           alert(`Failed to add to folder: ${result.error}`);

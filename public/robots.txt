@@ -1,0 +1,14 @@
+# Allow all robots
+User-agent: *
+Allow: /
+
+# Disallow private routes
+Disallow: /api/
+Disallow: /inbox
+Disallow: /messages
+Disallow: /settings
+Disallow: /dashboard
+
+# Sitemap
+Sitemap: https://pan.app/sitemap.xml
+

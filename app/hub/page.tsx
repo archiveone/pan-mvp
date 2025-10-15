@@ -439,6 +439,12 @@ export default function AdvancedHub() {
   };
 
   const handleBoxClick = (box: HubBox) => {
+    // Special navigation for dashboard boxes
+    if (box.box_type === 'dashboard') {
+      router.push('/dashboard-new');
+      return;
+    }
+    
     // Special navigation for inbox boxes
     if (box.box_type === 'inbox') {
       // Check if it's the default inbox or a custom one
@@ -785,7 +791,41 @@ export default function AdvancedHub() {
 
                       {/* Box Content Preview */}
                       <div className="flex-1 min-h-0 mb-2">
-                        {box.box_type === 'inbox' || box.box_type === 'chat_group' ? (
+                        {box.box_type === 'dashboard' ? (
+                          /* Dashboard Preview */
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className={`${isLightBg ? 'bg-gray-900/10' : 'bg-white/10'} backdrop-blur-sm rounded-lg p-3`}>
+                                <p className="text-xs" style={{ color: textColor, opacity: 0.7 }}>Views</p>
+                                <p className="text-lg font-bold" style={{ color: textColor }}>
+                                  {Math.floor(Math.random() * 1000)}
+                                </p>
+                              </div>
+                              <div className={`${isLightBg ? 'bg-gray-900/10' : 'bg-white/10'} backdrop-blur-sm rounded-lg p-3`}>
+                                <p className="text-xs" style={{ color: textColor, opacity: 0.7 }}>Revenue</p>
+                                <p className="text-lg font-bold" style={{ color: textColor }}>
+                                  ${Math.floor(Math.random() * 500)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-end gap-1 h-16">
+                              {[...Array(7)].map((_, i) => {
+                                const height = 30 + Math.random() * 70;
+                                return (
+                                  <div 
+                                    key={i} 
+                                    className="flex-1 rounded-t" 
+                                    style={{ 
+                                      height: `${height}%`, 
+                                      backgroundColor: textColor,
+                                      opacity: 0.6
+                                    }} 
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : box.box_type === 'inbox' || box.box_type === 'chat_group' ? (
                           /* Conversation List for Inbox/Chats */
                           <div className="space-y-2">
                             {boxContent[box.id]?.conversations?.map((conv: Conversation) => {
@@ -947,6 +987,15 @@ export default function AdvancedHub() {
               </button>
               
               <button
+                onClick={() => handleBoxTypeSelected('dashboard')}
+                className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 rounded-2xl transition-all active:scale-95"
+              >
+                <Icons.BarChart3 className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
+                <p className="font-semibold text-gray-900 dark:text-white text-sm">Dashboard</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Analytics & insights</p>
+              </button>
+              
+              <button
                 onClick={() => handleBoxTypeSelected('inbox')}
                 className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-900/30 dark:hover:to-purple-900/30 rounded-2xl transition-all active:scale-95"
               >
@@ -957,9 +1006,9 @@ export default function AdvancedHub() {
               
               <button
                 onClick={() => handleBoxTypeSelected('custom')}
-                className="p-6 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 hover:from-emerald-100 hover:to-teal-100 dark:hover:from-emerald-900/30 dark:hover:to-teal-900/30 rounded-2xl transition-all active:scale-95"
+                className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 rounded-2xl transition-all active:scale-95"
               >
-                <Icons.Sparkles className="w-8 h-8 text-emerald-600 dark:text-emerald-400 mx-auto mb-2" />
+                <Icons.Sparkles className="w-8 h-8 text-amber-600 dark:text-amber-400 mx-auto mb-2" />
                 <p className="font-semibold text-gray-900 dark:text-white text-sm">Custom</p>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Mood boards, ideas...</p>
               </button>

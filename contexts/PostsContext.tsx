@@ -40,7 +40,7 @@ export const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     // Try Supabase first, fallback to local
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
         const { data, error } = await supabase.from('posts').insert({
           user_id: newPost.user.id,
           type: newPost.postType,
@@ -73,7 +73,7 @@ export const PostsProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   useEffect(() => {
     const loadPosts = async () => {
       try {
-        if (import.meta.env.VITE_SUPABASE_URL) {
+        if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
           const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
           if (error) throw error;
           // TODO: transform data to Post[] format

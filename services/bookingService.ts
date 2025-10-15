@@ -1,763 +1,519 @@
 import { supabase } from '@/lib/supabase'
-import { TransactionService } from './transactionService'
 
-export interface BookingSlot {
-  id: string
-  content_id: string
-  date: string
-  start_time: string
-  end_time: string
-  max_capacity: number
-  current_bookings: number
-  price: number
-  currency: string
-  is_available: boolean
-  metadata?: Record<string, any>
-}
-
-export interface BookingRequest {
+export interface BookableListing {
   id: string
   user_id: string
-  content_id: string
-  booking_slot_id: string
-  date: string
-  start_time: string
-  end_time: string
-  party_size: number
+  title: string
+  description: string
+  property_type: 'apartment' | 'house' | 'room' | 'studio' | 'villa' | 'cabin' | 'other'
+  listing_type: 'entire_place' | 'private_room' | 'shared_room'
+  
+  // Location
+  address: string
+  city: string
+  state: string
+  country: string
+  postal_code: string
+  coordinates: { lat: number; lng: number }
+  
+  // Capacity
+  max_guests: number
+  bedrooms: number
+  beds: number
+  bathrooms: number
+  
+  // Pricing
+  base_price: number
+  currency: string
+  cleaning_fee?: number
+  service_fee_percentage: number
+  weekend_price?: number
+  monthly_discount_percentage?: number
+  
+  // Amenities
+  amenities: string[]
+  
+  // Rules
+  house_rules: string[]
+  check_in_time: string
+  check_out_time: string
+  min_nights: number
+  max_nights?: number
+  cancellation_policy: 'flexible' | 'moderate' | 'strict'
+  
+  // Images
+  images: string[]
+  virtual_tour_url?: string
+  
+  // Availability
+  calendar_type: 'manual' | 'synced'
+  instant_book: boolean
+  blocked_dates: string[]
+  
+  // Status
+  is_active: boolean
+  is_verified: boolean
+  
+  // Reviews
+  average_rating: number
+  review_count: number
+  
+  created_at: string
+  updated_at: string
+  
+  profiles?: {
+    id: string
+    name: string
+    username: string
+    avatar_url: string
+    host_since: string
+    superhost: boolean
+  }
+}
+
+export interface Booking {
+  id: string
+  listing_id: string
+  guest_id: string
+  host_id: string
+  
+  // Dates
+  check_in: string
+  check_out: string
+  nights: number
+  
+  // Guests
+  num_guests: number
+  num_adults: number
+  num_children: number
+  num_infants: number
+  num_pets: number
+  
+  // Pricing
+  base_price: number
+  cleaning_fee: number
+  service_fee: number
   total_price: number
   currency: string
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
+  
+  // Status
+  status: 'inquiry' | 'pending' | 'accepted' | 'declined' | 'cancelled' | 'completed'
+  payment_status: 'unpaid' | 'paid' | 'refunded'
+  payment_id?: string
+  
+  // Communication
+  guest_message?: string
+  host_response?: string
   special_requests?: string
-  contact_info: {
-    name: string
-    email: string
-    phone?: string
-  }
+  
+  // Check-in
+  self_check_in: boolean
+  check_in_instructions?: string
+  
   created_at: string
   updated_at: string
 }
 
-export interface AvailabilityRule {
-  content_id: string
-  day_of_week: number // 0 = Sunday, 1 = Monday, etc.
-  start_time: string
-  end_time: string
-  max_capacity: number
+export interface BookingAvailability {
+  date: string
+  available: boolean
   price: number
-  is_active: boolean
-  exceptions?: Array<{
-    date: string
-    is_available: boolean
-    custom_price?: number
-    custom_capacity?: number
-  }>
+  min_nights: number
 }
 
-export interface RecurringBooking {
+export interface Review {
   id: string
-  user_id: string
-  content_id: string
-  pattern: 'daily' | 'weekly' | 'monthly'
-  start_date: string
-  end_date: string
-  time_slot: {
-    start_time: string
-    end_time: string
-  }
-  frequency: number // Every X days/weeks/months
-  max_occurrences?: number
-  is_active: boolean
+  booking_id: string
+  listing_id: string
+  reviewer_id: string
+  reviewee_id: string
+  rating: number
+  cleanliness_rating: number
+  communication_rating: number
+  check_in_rating: number
+  accuracy_rating: number
+  location_rating: number
+  value_rating: number
+  comment: string
+  host_response?: string
   created_at: string
 }
 
 export class BookingService {
-  
-  // ==================== AVAILABILITY MANAGEMENT ====================
-  
-  /**
-   * Create availability rules for a service/rental
-   */
-  static async createAvailabilityRule(rule: AvailabilityRule): Promise<{
-    success: boolean;
-    rule?: AvailabilityRule;
-    error?: string;
-  }> {
+  // === LISTING MANAGEMENT ===
+
+  static async createListing(data: Partial<BookableListing>): Promise<{ success: boolean; listing?: BookableListing; error?: string }> {
     try {
-      const { data, error } = await supabase
-        .from('availability_rules')
-        .insert(rule)
-        .select()
+      const { data: listing, error } = await supabase
+        .from('bookable_listings')
+        .insert({
+          ...data,
+          is_active: true,
+          is_verified: false,
+          average_rating: 0,
+          review_count: 0,
+          service_fee_percentage: 10 // Default 10% service fee
+        })
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            username,
+            avatar_url,
+            host_since,
+            superhost
+          )
+        `)
         .single()
 
       if (error) throw error
 
-      return { success: true, rule: data as AvailabilityRule }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }
+      return { success: true, listing: listing as BookableListing }
+    } catch (error: any) {
+      console.error('Create listing error:', error)
+      return { success: false, error: error.message }
     }
   }
 
-  /**
-   * Get availability for a specific date range
-   */
-  static async getAvailability(
-    contentId: string,
-    startDate: string,
-    endDate: string
-  ): Promise<{
-    success: boolean;
-    slots?: BookingSlot[];
-    error?: string;
-  }> {
+  static async updateListing(listingId: string, data: Partial<BookableListing>): Promise<{ success: boolean; error?: string }> {
     try {
-      // Get availability rules
-      const { data: rules, error: rulesError } = await supabase
-        .from('availability_rules')
-        .select('*')
-        .eq('content_id', contentId)
+      const { error } = await supabase
+        .from('bookable_listings')
+        .update(data)
+        .eq('id', listingId)
+
+      if (error) throw error
+
+      return { success: true }
+    } catch (error: any) {
+      console.error('Update listing error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // === SEARCH & DISCOVERY ===
+
+  static async searchListings(filters: {
+    location?: string
+    checkIn?: string
+    checkOut?: string
+    guests?: number
+    minPrice?: number
+    maxPrice?: number
+    propertyType?: string
+    amenities?: string[]
+    instantBook?: boolean
+    limit?: number
+  }): Promise<{ success: boolean; listings?: BookableListing[]; error?: string }> {
+    try {
+      let query = supabase
+        .from('bookable_listings')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            username,
+            avatar_url,
+            host_since,
+            superhost
+          )
+        `)
         .eq('is_active', true)
 
-      if (rulesError) throw rulesError
+      if (filters.location) {
+        query = query.or(`city.ilike.%${filters.location}%,state.ilike.%${filters.location}%,country.ilike.%${filters.location}%`)
+      }
 
-      // Get existing bookings
+      if (filters.guests) {
+        query = query.gte('max_guests', filters.guests)
+      }
+
+      if (filters.minPrice) {
+        query = query.gte('base_price', filters.minPrice)
+      }
+
+      if (filters.maxPrice) {
+        query = query.lte('base_price', filters.maxPrice)
+      }
+
+      if (filters.propertyType) {
+        query = query.eq('property_type', filters.propertyType)
+      }
+
+      if (filters.instantBook) {
+        query = query.eq('instant_book', true)
+      }
+
+      query = query
+        .order('average_rating', { ascending: false })
+        .limit(filters.limit || 50)
+
+      const { data: listings, error } = await query
+
+      if (error) throw error
+
+      return { success: true, listings: listings as BookableListing[] }
+    } catch (error: any) {
+      console.error('Search listings error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // === AVAILABILITY ===
+
+  static async checkAvailability(
+    listingId: string,
+    checkIn: string,
+    checkOut: string
+  ): Promise<{ success: boolean; available?: boolean; price?: number; error?: string }> {
+    try {
+      // Check if dates are blocked
+      const { data: listing, error: listingError } = await supabase
+        .from('bookable_listings')
+        .select('blocked_dates, base_price, min_nights')
+        .eq('id', listingId)
+        .single()
+
+      if (listingError) throw listingError
+
+      // Check for existing bookings
       const { data: bookings, error: bookingsError } = await supabase
-        .from('booking_requests')
-        .select('booking_slot_id, party_size, status')
-        .eq('content_id', contentId)
-        .in('status', ['confirmed', 'pending'])
+        .from('bookings')
+        .select('check_in, check_out')
+        .eq('listing_id', listingId)
+        .in('status', ['pending', 'accepted'])
+        .or(`check_in.lte.${checkOut},check_out.gte.${checkIn}`)
 
       if (bookingsError) throw bookingsError
 
-      // Generate available slots
-      const slots: BookingSlot[] = []
-      const currentDate = new Date(startDate)
-      const endDateObj = new Date(endDate)
+      const available = bookings.length === 0
+      const price = listing.base_price
 
-      while (currentDate <= endDateObj) {
-        const dayOfWeek = currentDate.getDay()
-        const dateStr = currentDate.toISOString().split('T')[0]
-
-        // Find rules for this day of week
-        const dayRules = rules?.filter(rule => rule.day_of_week === dayOfWeek) || []
-
-        for (const rule of dayRules) {
-          // Check for exceptions
-          const exception = rule.exceptions?.find(ex => ex.date === dateStr)
-          
-          if (exception && !exception.is_available) {
-            continue // Skip this slot due to exception
-          }
-
-          const slot: BookingSlot = {
-            id: `${contentId}-${dateStr}-${rule.start_time}`,
-            content_id: contentId,
-            date: dateStr,
-            start_time: rule.start_time,
-            end_time: rule.end_time,
-            max_capacity: exception?.custom_capacity || rule.max_capacity,
-            current_bookings: 0,
-            price: exception?.custom_price || rule.price,
-            currency: 'EUR', // Default currency
-            is_available: true,
-            metadata: {
-              rule_id: rule.id,
-              is_exception: !!exception
-            }
-          }
-
-          // Calculate current bookings for this slot
-          const slotBookings = bookings?.filter(booking => 
-            booking.booking_slot_id === slot.id
-          ) || []
-
-          slot.current_bookings = slotBookings.reduce((sum, booking) => 
-            sum + booking.party_size, 0
-          )
-
-          slot.is_available = slot.current_bookings < slot.max_capacity
-
-          slots.push(slot)
-        }
-
-        currentDate.setDate(currentDate.getDate() + 1)
-      }
-
-      return { success: true, slots }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }
+      return { success: true, available, price }
+    } catch (error: any) {
+      console.error('Check availability error:', error)
+      return { success: false, error: error.message }
     }
   }
 
-  /**
-   * Check if a specific time slot is available
-   */
-  static async checkSlotAvailability(
-    contentId: string,
-    date: string,
-    startTime: string,
-    partySize: number
-  ): Promise<{
-    success: boolean;
-    available: boolean;
-    slot?: BookingSlot;
-    error?: string;
-  }> {
+  static async getCalendarAvailability(
+    listingId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<{ success: boolean; calendar?: BookingAvailability[]; error?: string }> {
     try {
-      const result = await this.getAvailability(contentId, date, date)
+      const { data: listing, error: listingError } = await supabase
+        .from('bookable_listings')
+        .select('blocked_dates, base_price, weekend_price, min_nights')
+        .eq('id', listingId)
+        .single()
+
+      if (listingError) throw listingError
+
+      // Get all bookings in date range
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('check_in, check_out')
+        .eq('listing_id', listingId)
+        .in('status', ['pending', 'accepted'])
+        .gte('check_in', startDate)
+        .lte('check_out', endDate)
+
+      if (bookingsError) throw bookingsError
+
+      // Generate calendar
+      const calendar: BookingAvailability[] = []
+      const start = new Date(startDate)
+      const end = new Date(endDate)
       
-      if (!result.success) {
-        return { success: false, available: false, error: result.error }
-      }
-
-      const slot = result.slots?.find(s => 
-        s.date === date && s.start_time === startTime
-      )
-
-      if (!slot) {
-        return { success: true, available: false }
-      }
-
-      const available = slot.is_available && (slot.current_bookings + partySize) <= slot.max_capacity
-
-      return { 
-        success: true, 
-        available, 
-        slot: available ? slot : undefined 
-      }
-    } catch (error) {
-      return { 
-        success: false, 
-        available: false,
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }
-    }
-  }
-
-  // ==================== BOOKING MANAGEMENT ====================
-  
-  /**
-   * Create a new booking request
-   */
-  static async createBookingRequest(
-    userId: string,
-    contentId: string,
-    bookingData: {
-      date: string
-      start_time: string
-      end_time: string
-      party_size: number
-      special_requests?: string
-      contact_info: {
-        name: string
-        email: string
-        phone?: string
-      }
-    }
-  ): Promise<{
-    success: boolean;
-    booking?: BookingRequest;
-    transaction?: any;
-    error?: string;
-  }> {
-    try {
-      // Check availability
-      const availabilityCheck = await this.checkSlotAvailability(
-        contentId,
-        bookingData.date,
-        bookingData.start_time,
-        bookingData.party_size
-      )
-
-      if (!availabilityCheck.success) {
-        return { success: false, error: availabilityCheck.error }
-      }
-
-      if (!availabilityCheck.available || !availabilityCheck.slot) {
-        return { success: false, error: 'This time slot is no longer available' }
-      }
-
-      // Calculate total price
-      const totalPrice = availabilityCheck.slot.price * bookingData.party_size
-
-      // Create booking request
-      const bookingRequest: Omit<BookingRequest, 'id' | 'created_at' | 'updated_at'> = {
-        user_id: userId,
-        content_id: contentId,
-        booking_slot_id: availabilityCheck.slot.id,
-        date: bookingData.date,
-        start_time: bookingData.start_time,
-        end_time: bookingData.end_time,
-        party_size: bookingData.party_size,
-        total_price: totalPrice,
-        currency: availabilityCheck.slot.currency,
-        status: 'pending',
-        special_requests: bookingData.special_requests,
-        contact_info: bookingData.contact_info
-      }
-
-      const { data: booking, error: bookingError } = await supabase
-        .from('booking_requests')
-        .insert(bookingRequest)
-        .select()
-        .single()
-
-      if (bookingError) throw bookingError
-
-      // Create transaction
-      const transactionResult = await TransactionService.createBookingTransaction(
-        userId,
-        contentId,
-        {
-          booking_date: bookingData.date,
-          start_time: bookingData.start_time,
-          end_time: bookingData.end_time,
-          party_size: bookingData.party_size,
-          special_requests: bookingData.special_requests
-        }
-      )
-
-      if (!transactionResult.success) {
-        return { success: false, error: transactionResult.error }
-      }
-
-      return { 
-        success: true, 
-        booking: booking as BookingRequest,
-        transaction: transactionResult.transaction
-      }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }
-    }
-  }
-
-  /**
-   * Confirm a booking
-   */
-  static async confirmBooking(
-    bookingId: string,
-    paymentIntentId?: string
-  ): Promise<{
-    success: boolean;
-    booking?: BookingRequest;
-    error?: string;
-  }> {
-    try {
-      const { data, error } = await supabase
-        .from('booking_requests')
-        .update({ 
-          status: 'confirmed',
-          updated_at: new Date().toISOString()
+      for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+        const dateStr = date.toISOString().split('T')[0]
+        const isWeekend = date.getDay() === 0 || date.getDay() === 6
+        
+        const isBooked = bookings.some(booking => {
+          const checkIn = new Date(booking.check_in)
+          const checkOut = new Date(booking.check_out)
+          return date >= checkIn && date < checkOut
         })
-        .eq('id', bookingId)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      // Update related transaction if payment intent provided
-      if (paymentIntentId) {
-        // Find the related transaction and update it
-        const { data: transactions } = await supabase
-          .from('transactions')
-          .select('id')
-          .eq('content_id', data.content_id)
-          .eq('user_id', data.user_id)
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(1)
-
-        if (transactions && transactions.length > 0) {
-          await TransactionService.updateWithStripePayment(
-            transactions[0].id,
-            {
-              payment_intent_id: paymentIntentId,
-              status: 'succeeded'
-            }
-          )
-        }
-      }
-
-      return { success: true, booking: data as BookingRequest }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }
-    }
-  }
-
-  /**
-   * Cancel a booking
-   */
-  static async cancelBooking(
-    bookingId: string,
-    reason?: string
-  ): Promise<{
-    success: boolean;
-    booking?: BookingRequest;
-    error?: string;
-  }> {
-    try {
-      const { data, error } = await supabase
-        .from('booking_requests')
-        .update({ 
-          status: 'cancelled',
-          updated_at: new Date().toISOString(),
-          metadata: { cancellation_reason: reason }
+        
+        const isBlocked = listing.blocked_dates?.includes(dateStr)
+        
+        calendar.push({
+          date: dateStr,
+          available: !isBooked && !isBlocked,
+          price: isWeekend && listing.weekend_price ? listing.weekend_price : listing.base_price,
+          min_nights: listing.min_nights
         })
-        .eq('id', bookingId)
-        .select()
+      }
+
+      return { success: true, calendar }
+    } catch (error: any) {
+      console.error('Get calendar error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // === BOOKING MANAGEMENT ===
+
+  static async createBooking(data: {
+    listingId: string
+    guestId: string
+    checkIn: string
+    checkOut: string
+    numGuests: number
+    numAdults?: number
+    numChildren?: number
+    guestMessage?: string
+  }): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+    try {
+      // Get listing details
+      const { data: listing, error: listingError } = await supabase
+        .from('bookable_listings')
+        .select('user_id, base_price, cleaning_fee, service_fee_percentage, currency, instant_book')
+        .eq('id', data.listingId)
         .single()
 
-      if (error) throw error
+      if (listingError) throw listingError
 
-      return { success: true, booking: data as BookingRequest }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }
-    }
-  }
+      // Calculate nights
+      const checkIn = new Date(data.checkIn)
+      const checkOut = new Date(data.checkOut)
+      const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
 
-  /**
-   * Get user's bookings
-   */
-  static async getUserBookings(
-    userId: string,
-    status?: BookingRequest['status']
-  ): Promise<{
-    success: boolean;
-    bookings?: BookingRequest[];
-    error?: string;
-  }> {
-    try {
-      let query = supabase
-        .from('booking_requests')
-        .select('*')
-        .eq('user_id', userId)
+      // Calculate pricing
+      const basePrice = listing.base_price * nights
+      const cleaningFee = listing.cleaning_fee || 0
+      const serviceFee = basePrice * (listing.service_fee_percentage / 100)
+      const totalPrice = basePrice + cleaningFee + serviceFee
 
-      if (status) {
-        query = query.eq('status', status)
-      }
-
-      const { data, error } = await query
-        .order('date', { ascending: true })
-        .order('start_time', { ascending: true })
-
-      if (error) throw error
-
-      return { success: true, bookings: data as BookingRequest[] }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }
-    }
-  }
-
-  /**
-   * Get bookings for a content item (for providers)
-   */
-  static async getContentBookings(
-    contentId: string,
-    status?: BookingRequest['status']
-  ): Promise<{
-    success: boolean;
-    bookings?: BookingRequest[];
-    error?: string;
-  }> {
-    try {
-      let query = supabase
-        .from('booking_requests')
-        .select(`
-          *,
-          profiles!booking_requests_user_id_fkey (
-            name,
-            username,
-            avatar_url
-          )
-        `)
-        .eq('content_id', contentId)
-
-      if (status) {
-        query = query.eq('status', status)
-      }
-
-      const { data, error } = await query
-        .order('date', { ascending: true })
-        .order('start_time', { ascending: true })
-
-      if (error) throw error
-
-      return { success: true, bookings: data as BookingRequest[] }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }
-    }
-  }
-
-  // ==================== RECURRING BOOKINGS ====================
-  
-  /**
-   * Create recurring booking
-   */
-  static async createRecurringBooking(
-    userId: string,
-    contentId: string,
-    recurringData: {
-      pattern: 'daily' | 'weekly' | 'monthly'
-      start_date: string
-      end_date: string
-      time_slot: {
-        start_time: string
-        end_time: string
-      }
-      frequency: number
-      max_occurrences?: number
-      party_size: number
-      special_requests?: string
-    }
-  ): Promise<{
-    success: boolean;
-    recurring_booking?: RecurringBooking;
-    individual_bookings?: BookingRequest[];
-    error?: string;
-  }> {
-    try {
-      // Create recurring booking record
-      const recurringBooking: Omit<RecurringBooking, 'id' | 'created_at'> = {
-        user_id: userId,
-        content_id: contentId,
-        pattern: recurringData.pattern,
-        start_date: recurringData.start_date,
-        end_date: recurringData.end_date,
-        time_slot: recurringData.time_slot,
-        frequency: recurringData.frequency,
-        max_occurrences: recurringData.max_occurrences,
-        is_active: true
-      }
-
-      const { data: recurring, error: recurringError } = await supabase
-        .from('recurring_bookings')
-        .insert(recurringBooking)
-        .select()
-        .single()
-
-      if (recurringError) throw recurringError
-
-      // Generate individual booking requests
-      const individualBookings: BookingRequest[] = []
-      const startDate = new Date(recurringData.start_date)
-      const endDate = new Date(recurringData.end_date)
-      let occurrenceCount = 0
-
-      while (startDate <= endDate && (!recurringData.max_occurrences || occurrenceCount < recurringData.max_occurrences)) {
-        // Check availability for this date
-        const availabilityCheck = await this.checkSlotAvailability(
-          contentId,
-          startDate.toISOString().split('T')[0],
-          recurringData.time_slot.start_time,
-          recurringData.party_size
-        )
-
-        if (availabilityCheck.success && availabilityCheck.available && availabilityCheck.slot) {
-          // Create individual booking
-          const bookingResult = await this.createBookingRequest(
-            userId,
-            contentId,
-            {
-              date: startDate.toISOString().split('T')[0],
-              start_time: recurringData.time_slot.start_time,
-              end_time: recurringData.time_slot.end_time,
-              party_size: recurringData.party_size,
-              special_requests: recurringData.special_requests,
-              contact_info: {
-                name: '', // Will be filled from user profile
-                email: ''
-              }
-            }
-          )
-
-          if (bookingResult.success && bookingResult.booking) {
-            individualBookings.push(bookingResult.booking)
-          }
-        }
-
-        // Move to next occurrence
-        switch (recurringData.pattern) {
-          case 'daily':
-            startDate.setDate(startDate.getDate() + recurringData.frequency)
-            break
-          case 'weekly':
-            startDate.setDate(startDate.getDate() + (7 * recurringData.frequency))
-            break
-          case 'monthly':
-            startDate.setMonth(startDate.getMonth() + recurringData.frequency)
-            break
-        }
-
-        occurrenceCount++
-      }
-
-      return { 
-        success: true, 
-        recurring_booking: recurring as RecurringBooking,
-        individual_bookings: individualBookings
-      }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }
-    }
-  }
-
-  // ==================== WAITLIST MANAGEMENT ====================
-  
-  /**
-   * Add user to waitlist
-   */
-  static async addToWaitlist(
-    userId: string,
-    contentId: string,
-    preferredDate: string,
-    preferredTime: string,
-    partySize: number
-  ): Promise<{
-    success: boolean;
-    waitlist_position?: number;
-    error?: string;
-  }> {
-    try {
-      // Check if user is already on waitlist
-      const { data: existingWaitlist } = await supabase
-        .from('waitlist')
-        .select('position')
-        .eq('user_id', userId)
-        .eq('content_id', contentId)
-        .eq('preferred_date', preferredDate)
-        .eq('preferred_time', preferredTime)
-
-      if (existingWaitlist && existingWaitlist.length > 0) {
-        return { 
-          success: false, 
-          error: 'You are already on the waitlist for this time slot' 
-        }
-      }
-
-      // Get next position
-      const { data: lastPosition } = await supabase
-        .from('waitlist')
-        .select('position')
-        .eq('content_id', contentId)
-        .eq('preferred_date', preferredDate)
-        .eq('preferred_time', preferredTime)
-        .order('position', { ascending: false })
-        .limit(1)
-
-      const nextPosition = (lastPosition?.[0]?.position || 0) + 1
-
-      // Add to waitlist
-      const { error } = await supabase
-        .from('waitlist')
+      // Create booking
+      const { data: booking, error } = await supabase
+        .from('bookings')
         .insert({
-          user_id: userId,
-          content_id: contentId,
-          preferred_date: preferredDate,
-          preferred_time: preferredTime,
-          party_size: partySize,
-          position: nextPosition,
-          created_at: new Date().toISOString()
+          listing_id: data.listingId,
+          guest_id: data.guestId,
+          host_id: listing.user_id,
+          check_in: data.checkIn,
+          check_out: data.checkOut,
+          nights,
+          num_guests: data.numGuests,
+          num_adults: data.numAdults || data.numGuests,
+          num_children: data.numChildren || 0,
+          base_price: basePrice,
+          cleaning_fee: cleaningFee,
+          service_fee: serviceFee,
+          total_price: totalPrice,
+          currency: listing.currency,
+          status: listing.instant_book ? 'accepted' : 'pending',
+          payment_status: 'unpaid',
+          guest_message: data.guestMessage,
+          self_check_in: false
         })
+        .select()
+        .single()
 
       if (error) throw error
 
-      return { success: true, waitlist_position: nextPosition }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }
+      return { success: true, booking: booking as Booking }
+    } catch (error: any) {
+      console.error('Create booking error:', error)
+      return { success: false, error: error.message }
     }
   }
 
-  /**
-   * Notify waitlist when slot becomes available
-   */
-  static async notifyWaitlist(
-    contentId: string,
-    date: string,
-    time: string,
-    availableCapacity: number
-  ): Promise<{
-    success: boolean;
-    notified_count?: number;
-    error?: string;
-  }> {
+  static async updateBookingStatus(
+    bookingId: string,
+    status: Booking['status'],
+    hostResponse?: string
+  ): Promise<{ success: boolean; error?: string }> {
     try {
-      // Get waitlist for this slot
-      const { data: waitlist, error } = await supabase
-        .from('waitlist')
-        .select(`
-          *,
-          profiles!waitlist_user_id_fkey (
-            name,
-            username,
-            email
-          )
-        `)
-        .eq('content_id', contentId)
-        .eq('preferred_date', date)
-        .eq('preferred_time', time)
-        .order('position', { ascending: true })
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          status,
+          host_response: hostResponse
+        })
+        .eq('id', bookingId)
 
       if (error) throw error
 
-      let remainingCapacity = availableCapacity
-      let notifiedCount = 0
+      return { success: true }
+    } catch (error: any) {
+      console.error('Update booking status error:', error)
+      return { success: false, error: error.message }
+    }
+  }
 
-      // Notify users in order until capacity is filled
-      for (const waitlistEntry of waitlist || []) {
-        if (remainingCapacity >= waitlistEntry.party_size) {
-          // TODO: Send notification email/SMS
-          // For now, just log
-          console.log(`Notifying ${waitlistEntry.profiles?.email} about available slot`)
-          
-          notifiedCount++
-          remainingCapacity -= waitlistEntry.party_size
-          
-          // Remove from waitlist
-          await supabase
-            .from('waitlist')
-            .delete()
-            .eq('id', waitlistEntry.id)
-        }
-      }
+  // === REVIEWS ===
 
-      return { success: true, notified_count: notifiedCount }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }
+  static async createReview(data: {
+    bookingId: string
+    listingId: string
+    reviewerId: string
+    revieweeId: string
+    rating: number
+    ratings: {
+      cleanliness: number
+      communication: number
+      checkIn: number
+      accuracy: number
+      location: number
+      value: number
+    }
+    comment: string
+  }): Promise<{ success: boolean; review?: Review; error?: string }> {
+    try {
+      const { data: review, error } = await supabase
+        .from('reviews')
+        .insert({
+          booking_id: data.bookingId,
+          listing_id: data.listingId,
+          reviewer_id: data.reviewerId,
+          reviewee_id: data.revieweeId,
+          rating: data.rating,
+          cleanliness_rating: data.ratings.cleanliness,
+          communication_rating: data.ratings.communication,
+          check_in_rating: data.ratings.checkIn,
+          accuracy_rating: data.ratings.accuracy,
+          location_rating: data.ratings.location,
+          value_rating: data.ratings.value,
+          comment: data.comment
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Update listing average rating
+      await this.updateListingRating(data.listingId)
+
+      return { success: true, review: review as Review }
+    } catch (error: any) {
+      console.error('Create review error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  private static async updateListingRating(listingId: string): Promise<void> {
+    const { data: reviews } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq('listing_id', listingId)
+
+    if (reviews && reviews.length > 0) {
+      const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+
+      await supabase
+        .from('bookable_listings')
+        .update({
+          average_rating: avgRating,
+          review_count: reviews.length
+        })
+        .eq('id', listingId)
     }
   }
 }
 
-
-
-
-
-
+export default BookingService

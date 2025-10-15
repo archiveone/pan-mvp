@@ -1,5 +1,5 @@
 -- Stories System Migration
--- Instagram/Snapchat-style stories that expire after 24 hours
+-- Short-form stories that expire after 24 hours
 
 -- Create stories table
 CREATE TABLE IF NOT EXISTS stories (

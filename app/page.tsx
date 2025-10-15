@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import AppHeader from '@/components/AppHeader'
 import AppFooter from '@/components/AppFooter'
@@ -9,12 +9,14 @@ import ListingGrid from '@/components/ListingGrid'
 import SearchAndFilters from '@/components/SearchAndFilters'
 import SmartTagFilters from '@/components/SmartTagFilters'
 import StoriesBar from '@/components/StoriesBar'
+import { useDebounce } from '@/hooks/useDebounce'
 // import FeaturedListings from '@/components/FeaturedListings'
 import { ContentService } from '@/services/contentService'
+import { UnifiedFeedService, UnifiedFeedItem } from '@/services/unifiedFeedService'
 import { SearchFilters, UnifiedContent } from '@/types/content'
 
-// Use the unified content type from our types
-type HomepageContent = UnifiedContent;
+// Use the unified feed type
+type HomepageContent = UnifiedFeedItem;
 
 export default function Home() {
   const { user } = useAuth()
@@ -29,70 +31,74 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  // Load content from database using unified service
+  // Debounce search inputs to avoid firing on every keystroke
+  const debouncedSearch = useDebounce(searchTerm, 500)
+  const debouncedLocation = useDebounce(location, 500)
+  
+  // Load content from database using unified feed service
   const loadContent = useCallback(async () => {
+    // Don't reload if already loading
+    if (loading && content.length > 0) return
+    
     setLoading(true)
     setError(null)
     
     try {
-      const filters: SearchFilters = {
-        query: searchTerm || undefined,
-        location: location || undefined,
-        price_min: priceRange.min > 0 ? priceRange.min : undefined,
-        price_max: priceRange.max < 1000 ? priceRange.max : undefined,
+      // Use the new unified feed service (with caching)
+      const results = await UnifiedFeedService.getUnifiedFeed({
+        query: debouncedSearch || undefined,
+        location: debouncedLocation || undefined,
+        priceMin: priceRange.min > 0 ? priceRange.min : undefined,
+        priceMax: priceRange.max < 1000 ? priceRange.max : undefined,
         tags: selectedTags.length > 0 ? selectedTags : undefined,
-        sort_by: sortBy as any,
         limit: 50
-      }
-
-      const result = await ContentService.searchContent(filters)
+      })
       
-      if (result.success && result.results) {
-        setContent(result.results.results)
-      } else {
-        console.error('❌ Failed to load content:', result.error)
-        setError(result.error || 'Failed to load content')
+      setContent(results)
+      setError(null)
+    } catch (error) {
+      console.error('❌ Error loading feed:', error)
+      setError('Unable to load content. Please check your connection and try again.')
+      // Don't clear existing content on error
+      if (content.length === 0) {
         setContent([])
       }
-    } catch (error) {
-      console.error('❌ Unexpected error:', error)
-      setError('An unexpected error occurred')
-      setContent([])
     } finally {
       setLoading(false)
     }
-  }, [searchTerm, location, priceRange, date, availability, sortBy, selectedTags])
+  }, [debouncedSearch, debouncedLocation, priceRange, selectedTags, content.length, loading])
 
   // Load content when component mounts or filters change
+  // Using debounced values prevents excessive reloading
   useEffect(() => {
     loadContent()
-  }, [loadContent])
+  }, [debouncedSearch, debouncedLocation, priceRange.min, priceRange.max, selectedTags])
 
-  // Convert UnifiedContent to Listing interface for ListingGrid compatibility
+  // Convert UnifiedFeedItem to Listing interface for ListingGrid compatibility
   const displayListings = content.map(item => ({
     id: item.id,
     title: item.title,
-    content: item.content || '',
-    price: (item as any).price_amount ? `${(item as any).price_amount} ${(item as any).currency || 'EUR'}` : undefined,
-    currency: (item as any).currency,
+    content: item.description || item.content || '',
+    price: item.price ? `${item.price} ${item.currency || 'USD'}` : undefined,
+    currency: item.currency,
     location: item.location,
-    category: (item as any).category,
-    event_date: (item as any).event_date,
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-    user_id: item.user_id,
-    profiles: item.profiles ? {
-      username: item.profiles.username || item.profiles.name || 'Unknown User',
-      avatar_url: item.profiles.avatar_url || ''
+    category: item.category,
+    event_date: item.extraData?.startDate,
+    created_at: item.createdAt,
+    updated_at: item.createdAt,
+    user_id: item.userId,
+    profiles: item.userProfile ? {
+      username: item.userProfile.username || item.userProfile.name || 'Unknown User',
+      avatar_url: item.userProfile.avatarUrl || ''
     } : undefined,
-    media_url: item.media_url,
-    image_url: item.media_url,
-    is_sold: false, // We're only showing approved listings, so none should be sold
-    content_type: item.content_type // Add content type for better handling
+    media_url: item.mediaUrl || item.thumbnailUrl,
+    image_url: item.thumbnailUrl || item.mediaUrl,
+    is_sold: false,
+    content_type: item.type // Use the unified type
   }))
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Header */}
       <AppHeader />
 
@@ -117,16 +123,16 @@ export default function Home() {
         posts={content.map(item => ({
           id: item.id,
           user: {
-            id: item.user_id || '',
-            name: item.profiles?.name || '',
-            avatarUrl: item.profiles?.avatar_url || '',
+            id: item.userId || '',
+            name: item.userProfile?.name || '',
+            avatarUrl: item.userProfile?.avatarUrl || '',
             bio: ''
           },
-          postType: item.content_type?.toUpperCase() as any || 'ITEM',
-          content: item.content || '',
-          tags: (item as any).tags || [],
+          postType: item.type?.toUpperCase() as any || 'ITEM',
+          content: item.description || item.content || '',
+          tags: item.tags || [],
           likes: 0,
-          timestamp: item.created_at
+          timestamp: item.createdAt
         }))}
         selectedTags={selectedTags}
         onTagsChange={setSelectedTags}
@@ -139,18 +145,18 @@ export default function Home() {
       <StoriesBar />
 
       {/* Content */}
-      <main className="px-4 py-6 pb-20">
+      <main className="px-3 sm:px-4 py-4 sm:py-6 pb-24 sm:pb-20">
         <div className="max-w-6xl mx-auto">
           {/* Error State */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center">
-                <div className="text-red-600 text-sm">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-0">
+                <div className="text-red-600 dark:text-red-400 text-sm flex-1">
                   <strong>Error loading listings:</strong> {error}
                 </div>
                 <button
                   onClick={loadContent}
-                  className="ml-4 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                  className="w-full sm:w-auto sm:ml-4 px-3 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
                 >
                   Retry
                 </button>
@@ -163,9 +169,9 @@ export default function Home() {
           
           {/* Empty State */}
           {!loading && !error && displayListings.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-gray-500 text-lg mb-2">No listings found</div>
-              <div className="text-gray-400 text-sm mb-4">
+            <div className="text-center py-12 sm:py-16 px-4">
+              <div className="text-gray-500 dark:text-gray-400 text-base sm:text-lg mb-2">No listings found</div>
+              <div className="text-gray-400 dark:text-gray-500 text-sm mb-4">
                 Try adjusting your search criteria or browse all categories
               </div>
               <button
@@ -178,7 +184,7 @@ export default function Home() {
                   setSortBy('trending')
                   setSelectedTags([])
                 }}
-                className="px-4 py-2 bg-black dark:bg-gray-700 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
+                className="px-6 py-3 bg-black dark:bg-gray-700 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors text-sm sm:text-base"
               >
                 Clear Filters
               </button>

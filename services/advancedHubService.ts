@@ -265,8 +265,9 @@ export class AdvancedHubService {
       // Create default boxes - Streamlined (only My Listings protected)
       const defaultBoxes = [
         { title: 'My Listings', box_type: 'posts', icon: 'Upload', color: 'blue', position: 0, is_deletable: false, is_public: true }, // Protected! Public profile
-        { title: 'Messages', box_type: 'inbox', icon: 'Mail', color: 'indigo', position: 1, is_deletable: true, is_public: false }, // Can delete/duplicate
-        { title: 'Saved', box_type: 'saved', icon: 'Heart', color: 'pink', position: 2, is_deletable: true, is_public: false } // Can delete
+        { title: 'Dashboard', box_type: 'dashboard', icon: 'BarChart3', color: 'green', position: 1, is_deletable: true, is_public: false }, // Analytics dashboard
+        { title: 'Messages', box_type: 'inbox', icon: 'Mail', color: 'indigo', position: 2, is_deletable: true, is_public: false }, // Can delete/duplicate
+        { title: 'Saved', box_type: 'saved', icon: 'Heart', color: 'pink', position: 3, is_deletable: true, is_public: false } // Can delete
       ];
 
       const { error } = await supabase

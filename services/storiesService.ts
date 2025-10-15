@@ -1,456 +1,423 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'
 
 export interface Story {
-  id: string;
-  user_id: string;
-  media_url: string;
-  media_type: 'image' | 'video';
-  thumbnail_url?: string;
-  caption?: string;
-  duration: number;
-  editor_data: any;
-  audio_url?: string;
-  audio_name?: string;
-  view_count: number;
-  is_public: boolean;
-  created_at: string;
-  expires_at: string;
+  id: string
+  user_id: string
+  content_type: 'image' | 'video' | 'live'
+  media_url?: string
+  text_overlay?: string
+  background_color?: string
+  duration?: number // in seconds
+  views_count: number
+  created_at: string
+  expires_at: string
+  is_live?: boolean
+  live_stream_url?: string
   profiles?: {
-    id: string;
-    name?: string;
-    username?: string;
-    avatar_url?: string;
-  };
+    id: string
+    name: string
+    username: string
+    avatar_url: string
+  }
 }
 
-export interface UserStories {
-  user_id: string;
-  username: string;
-  avatar_url?: string;
-  stories: Story[];
-  hasUnviewed: boolean;
+export interface LiveStream {
+  id: string
+  user_id: string
+  title: string
+  description?: string
+  stream_key: string
+  stream_url: string
+  playback_url: string
+  is_active: boolean
+  viewer_count: number
+  started_at: string
+  ended_at?: string
+  total_donations: number
+}
+
+export interface Donation {
+  id: string
+  live_stream_id: string
+  from_user_id: string
+  amount: number
+  currency: string
+  message?: string
+  created_at: string
 }
 
 export class StoriesService {
-  /**
-   * Get stories from users you follow (not expired) grouped by user
-   */
-  static async getFollowedUsersStories(currentUserId: string): Promise<{
-    success: boolean;
-    data?: UserStories[];
-    error?: string;
-  }> {
+  // Create a new story
+  static async createStory(data: {
+    userId: string
+    contentType: 'image' | 'video' | 'live'
+    mediaUrl?: string
+    textOverlay?: string
+    backgroundColor?: string
+    duration?: number
+  }): Promise<{ success: boolean; story?: Story; error?: string }> {
     try {
-      // First, get the list of users the current user is following
-      const { data: following, error: followError } = await supabase
-        .from('followers')
-        .select('following_id')
-        .eq('follower_id', currentUserId);
+      // Stories expire after 24 hours
+      const expiresAt = new Date()
+      expiresAt.setHours(expiresAt.getHours() + 24)
 
-      if (followError) throw followError;
-
-      if (!following || following.length === 0) {
-        return { success: true, data: [] };
-      }
-
-      const followingIds = following.map(f => f.following_id);
-
-      // Get stories from followed users only
-      const { data: stories, error } = await supabase
-        .from('stories')
-        .select(`
-          *,
-          profiles:user_id (
-            id,
-            name,
-            username,
-            avatar_url
-          )
-        `)
-        .in('user_id', followingIds)
-        .eq('is_public', true)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (!stories || stories.length === 0) {
-        return { success: true, data: [] };
-      }
-
-      // Get viewed stories for current user
-      const { data: views } = await supabase
-        .from('story_views')
-        .select('story_id')
-        .eq('viewer_id', currentUserId);
-      
-      const viewedStoryIds = views?.map(v => v.story_id) || [];
-
-      // Group stories by user
-      const userStoriesMap = new Map<string, UserStories>();
-
-      stories.forEach((story: any) => {
-        const userId = story.user_id;
-        const profile = story.profiles;
-
-        if (!userStoriesMap.has(userId)) {
-          userStoriesMap.set(userId, {
-            user_id: userId,
-            username: profile?.username || profile?.name || 'User',
-            avatar_url: profile?.avatar_url,
-            stories: [],
-            hasUnviewed: false
-          });
-        }
-
-        const userStories = userStoriesMap.get(userId)!;
-        userStories.stories.push(story);
-
-        // Check if any story is unviewed
-        if (!viewedStoryIds.includes(story.id)) {
-          userStories.hasUnviewed = true;
-        }
-      });
-
-      // Convert map to array and sort by unviewed first
-      const userStoriesArray = Array.from(userStoriesMap.values())
-        .sort((a, b) => {
-          if (a.hasUnviewed && !b.hasUnviewed) return -1;
-          if (!a.hasUnviewed && b.hasUnviewed) return 1;
-          return 0;
-        });
-
-      return { success: true, data: userStoriesArray };
-    } catch (error) {
-      console.error('Error loading followed users stories:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to load stories'
-      };
-    }
-  }
-
-  /**
-   * Get all active stories (not expired) grouped by user (for explore/discovery)
-   */
-  static async getActiveStories(currentUserId?: string): Promise<{
-    success: boolean;
-    data?: UserStories[];
-    error?: string;
-  }> {
-    try {
-      const { data: stories, error } = await supabase
-        .from('stories')
-        .select(`
-          *,
-          profiles:user_id (
-            id,
-            name,
-            username,
-            avatar_url
-          )
-        `)
-        .eq('is_public', true)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (!stories || stories.length === 0) {
-        return { success: true, data: [] };
-      }
-
-      // Get viewed stories for current user
-      let viewedStoryIds: string[] = [];
-      if (currentUserId) {
-        const { data: views } = await supabase
-          .from('story_views')
-          .select('story_id')
-          .eq('viewer_id', currentUserId);
-        
-        viewedStoryIds = views?.map(v => v.story_id) || [];
-      }
-
-      // Group stories by user
-      const userStoriesMap = new Map<string, UserStories>();
-
-      stories.forEach((story: any) => {
-        const userId = story.user_id;
-        const profile = story.profiles;
-
-        if (!userStoriesMap.has(userId)) {
-          userStoriesMap.set(userId, {
-            user_id: userId,
-            username: profile?.username || profile?.name || 'User',
-            avatar_url: profile?.avatar_url,
-            stories: [],
-            hasUnviewed: false
-          });
-        }
-
-        const userStories = userStoriesMap.get(userId)!;
-        userStories.stories.push(story);
-
-        // Check if any story is unviewed
-        if (!viewedStoryIds.includes(story.id)) {
-          userStories.hasUnviewed = true;
-        }
-      });
-
-      // Convert map to array and sort by unviewed first
-      const userStoriesArray = Array.from(userStoriesMap.values())
-        .sort((a, b) => {
-          if (a.hasUnviewed && !b.hasUnviewed) return -1;
-          if (!a.hasUnviewed && b.hasUnviewed) return 1;
-          return 0;
-        });
-
-      return { success: true, data: userStoriesArray };
-    } catch (error) {
-      console.error('Error loading stories:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to load stories'
-      };
-    }
-  }
-
-  /**
-   * Get user's own stories
-   */
-  static async getMyStories(userId: string): Promise<{
-    success: boolean;
-    data?: Story[];
-    error?: string;
-  }> {
-    try {
-      const { data, error } = await supabase
-        .from('stories')
-        .select('*')
-        .eq('user_id', userId)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      return { success: true, data: data || [] };
-    } catch (error) {
-      console.error('Error loading my stories:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to load stories'
-      };
-    }
-  }
-
-  /**
-   * Create a new story
-   */
-  static async createStory(storyData: {
-    user_id: string;
-    media_url: string;
-    media_type: 'image' | 'video';
-    thumbnail_url?: string;
-    caption?: string;
-    duration?: number;
-    editor_data?: any;
-    audio_url?: string;
-    audio_name?: string;
-  }): Promise<{
-    success: boolean;
-    data?: Story;
-    error?: string;
-  }> {
-    try {
-      const { data, error } = await supabase
+      const { data: story, error } = await supabase
         .from('stories')
         .insert({
-          ...storyData,
-          duration: storyData.duration || 5,
-          editor_data: storyData.editor_data || {},
-          is_public: true,
-          view_count: 0,
-          created_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+          user_id: data.userId,
+          content_type: data.contentType,
+          media_url: data.mediaUrl,
+          text_overlay: data.textOverlay,
+          background_color: data.backgroundColor,
+          duration: data.duration || 5,
+          expires_at: expiresAt.toISOString(),
+          views_count: 0,
+          is_live: data.contentType === 'live'
         })
-        .select()
-        .single();
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            username,
+            avatar_url
+          )
+        `)
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { success: true, data };
-    } catch (error) {
-      console.error('Error creating story:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to create story'
-      };
+      return { success: true, story: story as Story }
+    } catch (error: any) {
+      console.error('Create story error:', error)
+      return { success: false, error: error.message }
     }
   }
 
-  /**
-   * Delete a story
-   */
-  static async deleteStory(storyId: string, userId: string): Promise<{
-    success: boolean;
-    error?: string;
-  }> {
+  // Get stories from followed users
+  static async getFollowedUsersStories(userId: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+      const now = new Date().toISOString()
+
+      // Get followed users' stories
+      const { data: stories, error } = await supabase
+        .from('stories')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            username,
+            avatar_url
+          )
+        `)
+        .gt('expires_at', now)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      // Group stories by user
+      const groupedStories: any[] = []
+      const userMap = new Map()
+
+      stories?.forEach((story: any) => {
+        const userId = story.user_id
+        if (!userMap.has(userId)) {
+          userMap.set(userId, {
+            user_id: userId,
+            username: story.profiles?.username || story.profiles?.name || 'User',
+            avatar_url: story.profiles?.avatar_url,
+            stories: [],
+            hasUnviewed: false
+          })
+          groupedStories.push(userMap.get(userId))
+        }
+        userMap.get(userId).stories.push(story)
+      })
+
+      return { success: true, data: groupedStories }
+    } catch (error: any) {
+      console.error('Get followed users stories error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Get my own stories
+  static async getMyStories(userId: string): Promise<{ success: boolean; data?: Story[]; error?: string }> {
+    try {
+      const now = new Date().toISOString()
+
+      const { data: stories, error } = await supabase
+        .from('stories')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            username,
+            avatar_url
+          )
+        `)
+        .eq('user_id', userId)
+        .gt('expires_at', now)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      return { success: true, data: stories as Story[] }
+    } catch (error: any) {
+      console.error('Get my stories error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Get active stories (not expired)
+  static async getActiveStories(): Promise<{ success: boolean; stories?: Story[]; error?: string }> {
+    try {
+      const now = new Date().toISOString()
+
+      const { data: stories, error } = await supabase
+        .from('stories')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            username,
+            avatar_url
+          )
+        `)
+        .gt('expires_at', now)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      return { success: true, stories: stories as Story[] }
+    } catch (error: any) {
+      console.error('Get stories error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Get user's stories
+  static async getUserStories(userId: string): Promise<{ success: boolean; stories?: Story[]; error?: string }> {
+    try {
+      const now = new Date().toISOString()
+
+      const { data: stories, error } = await supabase
+        .from('stories')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            name,
+            username,
+            avatar_url
+          )
+        `)
+        .eq('user_id', userId)
+        .gt('expires_at', now)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      return { success: true, stories: stories as Story[] }
+    } catch (error: any) {
+      console.error('Get user stories error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Increment story views
+  static async incrementViews(storyId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await supabase.rpc('increment_story_views', { story_id: storyId })
+
+      if (error) throw error
+
+      return { success: true }
+    } catch (error: any) {
+      console.error('Increment views error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Delete story
+  static async deleteStory(storyId: string): Promise<{ success: boolean; error?: string }> {
     try {
       const { error } = await supabase
         .from('stories')
         .delete()
         .eq('id', storyId)
-        .eq('user_id', userId);
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { success: true };
-    } catch (error) {
-      console.error('Error deleting story:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete story'
-      };
+      return { success: true }
+    } catch (error: any) {
+      console.error('Delete story error:', error)
+      return { success: false, error: error.message }
     }
   }
 
-  /**
-   * Mark story as viewed
-   */
-  static async markStoryViewed(storyId: string, viewerId: string): Promise<{
-    success: boolean;
-    error?: string;
-  }> {
+  // === LIVE STREAMING ===
+
+  // Start a live stream
+  static async startLiveStream(data: {
+    userId: string
+    title: string
+    description?: string
+  }): Promise<{ success: boolean; stream?: LiveStream; error?: string }> {
     try {
-      // Insert view record
-      const { error: viewError } = await supabase
-        .from('story_views')
-        .upsert({
-          story_id: storyId,
-          viewer_id: viewerId,
-          viewed_at: new Date().toISOString()
-        }, {
-          onConflict: 'story_id,viewer_id'
-        });
+      // Generate unique stream key
+      const streamKey = `live_${data.userId}_${Date.now()}`
+      const streamUrl = `rtmp://live.pan.app/live/${streamKey}`
+      const playbackUrl = `https://live.pan.app/hls/${streamKey}.m3u8`
 
-      if (viewError) throw viewError;
+      const { data: stream, error } = await supabase
+        .from('live_streams')
+        .insert({
+          user_id: data.userId,
+          title: data.title,
+          description: data.description,
+          stream_key: streamKey,
+          stream_url: streamUrl,
+          playback_url: playbackUrl,
+          is_active: true,
+          viewer_count: 0,
+          started_at: new Date().toISOString(),
+          total_donations: 0
+        })
+        .select()
+        .single()
 
-      // Increment view count
-      const { error: updateError } = await supabase.rpc('increment_story_views', {
-        story_id: storyId
-      });
+      if (error) throw error
 
-      if (updateError) {
-        // Fallback: manually increment if RPC doesn't exist
-        const { error: manualError } = await supabase
-          .from('stories')
-          .update({ view_count: supabase.raw('view_count + 1') })
-          .eq('id', storyId);
-        
-        if (manualError) throw manualError;
-      }
+      // Create a live story
+      await this.createStory({
+        userId: data.userId,
+        contentType: 'live',
+        mediaUrl: playbackUrl,
+        duration: 0
+      })
 
-      return { success: true };
-    } catch (error) {
-      console.error('Error marking story as viewed:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to mark story as viewed'
-      };
+      return { success: true, stream: stream as LiveStream }
+    } catch (error: any) {
+      console.error('Start live stream error:', error)
+      return { success: false, error: error.message }
     }
   }
 
-  /**
-   * Add reaction to story
-   */
-  static async addReaction(storyId: string, userId: string, reactionType: string): Promise<{
-    success: boolean;
-    error?: string;
-  }> {
+  // End live stream
+  static async endLiveStream(streamId: string): Promise<{ success: boolean; error?: string }> {
     try {
       const { error } = await supabase
-        .from('story_reactions')
-        .upsert({
-          story_id: storyId,
-          user_id: userId,
-          reaction_type: reactionType,
+        .from('live_streams')
+        .update({
+          is_active: false,
+          ended_at: new Date().toISOString()
+        })
+        .eq('id', streamId)
+
+      if (error) throw error
+
+      return { success: true }
+    } catch (error: any) {
+      console.error('End live stream error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Get active live streams
+  static async getActiveLiveStreams(): Promise<{ success: boolean; streams?: LiveStream[]; error?: string }> {
+    try {
+      const { data: streams, error } = await supabase
+        .from('live_streams')
+        .select('*')
+        .eq('is_active', true)
+        .order('started_at', { ascending: false })
+
+      if (error) throw error
+
+      return { success: true, streams: streams as LiveStream[] }
+    } catch (error: any) {
+      console.error('Get live streams error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // Update viewer count
+  static async updateViewerCount(streamId: string, count: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await supabase
+        .from('live_streams')
+        .update({ viewer_count: count })
+        .eq('id', streamId)
+
+      if (error) throw error
+
+      return { success: true }
+    } catch (error: any) {
+      console.error('Update viewer count error:', error)
+      return { success: false, error: error.message }
+    }
+  }
+
+  // === DONATIONS ===
+
+  // Send donation to live stream
+  static async sendDonation(data: {
+    streamId: string
+    fromUserId: string
+    amount: number
+    currency: string
+    message?: string
+  }): Promise<{ success: boolean; donation?: Donation; error?: string }> {
+    try {
+      const { data: donation, error } = await supabase
+        .from('live_donations')
+        .insert({
+          live_stream_id: data.streamId,
+          from_user_id: data.fromUserId,
+          amount: data.amount,
+          currency: data.currency,
+          message: data.message,
           created_at: new Date().toISOString()
-        }, {
-          onConflict: 'story_id,user_id'
-        });
+        })
+        .select()
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { success: true };
-    } catch (error) {
-      console.error('Error adding reaction:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to add reaction'
-      };
+      // Update total donations
+      await supabase.rpc('increment_stream_donations', {
+        stream_id: data.streamId,
+        donation_amount: data.amount
+      })
+
+      return { success: true, donation: donation as Donation }
+    } catch (error: any) {
+      console.error('Send donation error:', error)
+      return { success: false, error: error.message }
     }
   }
 
-  /**
-   * Get story viewers
-   */
-  static async getStoryViewers(storyId: string): Promise<{
-    success: boolean;
-    data?: any[];
-    error?: string;
-  }> {
+  // Get donations for a stream
+  static async getStreamDonations(streamId: string): Promise<{ success: boolean; donations?: Donation[]; error?: string }> {
     try {
-      const { data, error } = await supabase
-        .from('story_views')
-        .select(`
-          *,
-          profiles:viewer_id (
-            id,
-            name,
-            username,
-            avatar_url
-          )
-        `)
-        .eq('story_id', storyId)
-        .order('viewed_at', { ascending: false });
+      const { data: donations, error } = await supabase
+        .from('live_donations')
+        .select('*')
+        .eq('live_stream_id', streamId)
+        .order('created_at', { ascending: false })
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { success: true, data };
-    } catch (error) {
-      console.error('Error loading story viewers:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to load viewers'
-      };
-    }
-  }
-
-  /**
-   * Clean up expired stories (call this periodically)
-   */
-  static async cleanupExpiredStories(): Promise<{
-    success: boolean;
-    deletedCount?: number;
-    error?: string;
-  }> {
-    try {
-      const { data, error } = await supabase
-        .from('stories')
-        .delete()
-        .lt('expires_at', new Date().toISOString())
-        .select('id');
-
-      if (error) throw error;
-
-      return { success: true, deletedCount: data?.length || 0 };
-    } catch (error) {
-      console.error('Error cleaning up stories:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to cleanup stories'
-      };
+      return { success: true, donations: donations as Donation[] }
+    } catch (error: any) {
+      console.error('Get donations error:', error)
+      return { success: false, error: error.message }
     }
   }
 }
 
+export default StoriesService

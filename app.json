@@ -1,0 +1,88 @@
+{
+  "expo": {
+    "name": "Pan - Social & Marketplace",
+    "slug": "pan-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./public/icons/icon-1024x1024.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./public/splash/splash-2048x2732.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pan.app",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "UIBackgroundModes": ["fetch", "remote-notification"],
+        "NSCameraUsageDescription": "Pan needs access to your camera to take photos for posts and profile pictures.",
+        "NSPhotoLibraryUsageDescription": "Pan needs access to your photo library to select images for posts.",
+        "NSMicrophoneUsageDescription": "Pan needs access to your microphone for voice messages and video calls.",
+        "NSLocationWhenInUseUsageDescription": "Pan uses your location to show nearby events and listings.",
+        "NSUserTrackingUsageDescription": "This allows us to provide personalized content and better user experience."
+      },
+      "associatedDomains": ["applinks:pan.app", "webcredentials:pan.app"],
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./public/icons/icon-1024x1024.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.pan.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "pan.app",
+              "pathPrefix": "/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./public/favicon.svg",
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
+    },
+    "owner": "your-expo-account"
+  }
+}
+

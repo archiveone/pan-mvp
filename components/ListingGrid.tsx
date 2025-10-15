@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Star, MapPin, Calendar, DollarSign, User } from 'lucide-react'
 import { useSavedPosts } from '../hooks/useSavedListings'
 import SaveToFolderButton from './SaveToFolderButton'
+import AdvancedAnalyticsService from '@/services/advancedAnalyticsService'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface Listing {
   id: string
@@ -25,7 +27,13 @@ interface Listing {
   }
   media_url?: string
   image_url?: string
+  video_url?: string
+  audio_url?: string
   is_sold?: boolean
+  content_type?: string
+  media_type?: 'image' | 'video' | 'audio' | 'document'
+  duration?: number
+  file_type?: string
 }
 
 interface ListingGridProps {
@@ -38,15 +46,27 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
   const [zoomLevel, setZoomLevel] = useState(3) // 1 (largest) to 6 (smallest)
   const [showZoomIndicator, setShowZoomIndicator] = useState(false)
   const { isSaved, toggleSave } = useSavedPosts()
+  const { user } = useAuth()
   
-  // Map zoom levels to grid column classes
+  // Track view when user clicks on a listing
+  const handleListingClick = (listingId: string) => {
+    const sessionId = AdvancedAnalyticsService.generateSessionId()
+    AdvancedAnalyticsService.trackView({
+      contentId: listingId,
+      userId: user?.id,
+      sessionId,
+      deviceType: typeof navigator !== 'undefined' && /mobile/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+    })
+  }
+  
+  // Map zoom levels to grid column classes (mobile-optimized)
   const gridClasses = {
-    1: 'grid-cols-1 md:grid-cols-1 lg:grid-cols-2',        // Largest
-    2: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-2',        
-    3: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',        // Default
-    4: 'grid-cols-2 md:grid-cols-4 lg:grid-cols-5',        
-    5: 'grid-cols-3 md:grid-cols-5 lg:grid-cols-6',        
-    6: 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8'         // Smallest
+    1: 'grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2',        // Largest
+    2: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2',        
+    3: 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4',        // Default
+    4: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5',        
+    5: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6',        
+    6: 'grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8'         // Smallest
   }
   
   const showIndicator = React.useCallback(() => {
@@ -138,6 +158,10 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
       <div className={`grid ${gridClasses[zoomLevel as keyof typeof gridClasses]} gap-4`}>
       {listings.map((listing) => {
         const mainImage = listing.image_url || listing.media_url
+        const videoUrl = listing.video_url || (listing.media_type === 'video' ? listing.media_url : null)
+        const audioUrl = listing.audio_url || (listing.media_type === 'audio' ? listing.media_url : null)
+        const isVideo = !!videoUrl
+        const isAudio = !!audioUrl
         const isHovered = hoveredId === listing.id
         
         // Debug logging for profile data
@@ -153,72 +177,190 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
             onMouseLeave={() => setHoveredId(null)}
           >
             <Link
-              href={`/listing/${listing.id}`}
+              href={
+                listing.content_type === 'event' ? `/event/${listing.id}` :
+                listing.content_type === 'rental' ? `/rental/${listing.id}` :
+                listing.content_type === 'booking' ? `/booking/${listing.id}` :
+                listing.content_type === 'music' ? `/music/${listing.id}` :
+                listing.content_type === 'video' ? `/video/${listing.id}` :
+                listing.content_type === 'document' ? `/document/${listing.id}` :
+                `/listing/${listing.id}`
+              }
               className="absolute inset-0 cursor-pointer block"
+              onClick={() => handleListingClick(listing.id)}
             >
-            {/* Main Image */}
+            {/* Main Media (Image, Video, or Audio) */}
             <div className="absolute inset-0">
-              {mainImage ? (
+              {isVideo ? (
+                /* Video Preview - Auto-plays on card hover */
+                <div className="relative w-full h-full">
+                  <video
+                    ref={(el) => {
+                      if (el && isHovered) {
+                        el.play().catch(() => {}) // Auto-play when card is hovered
+                      } else if (el && !isHovered) {
+                        el.pause()
+                        el.currentTime = 0
+                      }
+                    }}
+                    src={videoUrl}
+                    className="w-full h-full object-cover"
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    poster={mainImage}
+                  />
+                  {/* Video Play Icon Overlay - Fades out when playing */}
+                  <div className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-300 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
+                    <div className="w-16 h-16 bg-black/60 rounded-full flex items-center justify-center backdrop-blur-sm">
+                      <div className="w-0 h-0 border-l-[16px] border-l-white border-t-[10px] border-t-transparent border-b-[10px] border-b-transparent ml-1"></div>
+                    </div>
+                  </div>
+                  {listing.duration && (
+                    <div className="absolute top-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
+                      {Math.floor(listing.duration / 60)}:{String(listing.duration % 60).padStart(2, '0')}
+                    </div>
+                  )}
+                </div>
+              ) : isAudio ? (
+                /* Audio Visual */
+                <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-500 dark:from-purple-600 dark:to-pink-700 flex items-center justify-center relative">
+                  {mainImage ? (
+                    <img
+                      src={mainImage}
+                      alt={listing.title}
+                      className="w-full h-full object-cover opacity-80"
+                    />
+                  ) : (
+                    <div className="text-white text-6xl">🎵</div>
+                  )}
+                  {/* Music Icon Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-16 h-16 bg-black/60 rounded-full flex items-center justify-center">
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
+                      </svg>
+                    </div>
+                  </div>
+                  {listing.duration && (
+                    <div className="absolute top-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
+                      {Math.floor(listing.duration / 60)}:{String(listing.duration % 60).padStart(2, '0')}
+                    </div>
+                  )}
+                </div>
+              ) : mainImage ? (
+                /* Image */
                 <img
                   src={mainImage}
                   alt={listing.title}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   onError={(e) => {
                     console.warn('Failed to load image:', mainImage)
-                    // Hide the broken image and show fallback
                     e.currentTarget.style.display = 'none'
                     const fallback = e.currentTarget.nextElementSibling as HTMLElement
                     if (fallback) fallback.style.display = 'flex'
                   }}
-                  onLoad={() => {
-                    console.log('Successfully loaded image:', mainImage)
-                  }}
                 />
               ) : null}
               
-              {/* Fallback for no image or broken image */}
-              <div 
-                className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center"
-                style={{ display: mainImage ? 'none' : 'flex' }}
-              >
-                <div className="text-gray-500 dark:text-gray-400 text-4xl">📦</div>
-              </div>
+              {/* Fallback for no media - Enhanced with better icons */}
+              {!isVideo && !isAudio && !mainImage && (
+                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex flex-col items-center justify-center">
+                  <div className="text-gray-500 dark:text-gray-400 text-5xl mb-2">
+                    {/* Content type based icons */}
+                    {listing.content_type === 'event' ? '🎪' :
+                     listing.content_type === 'rental' ? '🏠' :
+                     listing.content_type === 'booking' ? '🔑' :
+                     listing.content_type === 'music' ? '🎵' :
+                     listing.content_type === 'video' ? '🎬' :
+                     listing.file_type === 'pdf' ? '📄' :
+                     
+                     /* Category based icons */
+                     listing.category === 'Restaurants' ? '🍽️' :
+                     listing.category === 'Food & Drink' ? '🍲' :
+                     listing.category === 'Hotels' ? '🏨' :
+                     listing.category === 'Experiences' ? '🎭' :
+                     listing.category === 'Services' ? '✨' :
+                     listing.category === 'Places' ? '📍' :
+                     listing.category === 'Art & Crafts' ? '🎨' :
+                     listing.category === 'Fashion' ? '👗' :
+                     listing.category === 'Electronics' ? '⚡' :
+                     '📦'}
+                  </div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider font-medium">
+                    {listing.content_type || listing.category || 'listing'}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Hover Information Bar */}
-            <div className={`absolute bottom-0 left-0 right-0 h-28 bg-black/85 backdrop-blur-sm text-white p-3 transition-all duration-300 flex flex-col ${
-              isHovered ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+            {/* Content Type Badge - Enhanced with Categories */}
+            {(listing.content_type || listing.category) && (
+              <div className="absolute top-2 left-2 z-10">
+                <div className="bg-black/80 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm font-medium">
+                  {/* Primary content types */}
+                  {listing.content_type === 'event' && '🎪 Event'}
+                  {listing.content_type === 'rental' && '🏠 Stay'}
+                  {listing.content_type === 'booking' && '🔑 Booking'}
+                  {listing.content_type === 'music' && '🎵 Music'}
+                  {listing.content_type === 'video' && '🎬 Video'}
+                  {listing.content_type === 'document' && '📄 Doc'}
+                  
+                  {/* Category-based types */}
+                  {!listing.content_type && listing.category === 'Restaurants' && '🍽️ Restaurant'}
+                  {!listing.content_type && listing.category === 'Food & Drink' && '🍽️ Food'}
+                  {!listing.content_type && listing.category === 'Services' && '✨ Service'}
+                  {!listing.content_type && listing.category === 'Places' && '📍 Place'}
+                  {!listing.content_type && listing.category === 'Hotels' && '🏨 Hotel'}
+                  {!listing.content_type && listing.category === 'Experiences' && '🎭 Experience'}
+                  {!listing.content_type && listing.category === 'Art & Crafts' && '🎨 Art'}
+                  {!listing.content_type && listing.category === 'Fashion' && '👕 Fashion'}
+                  {!listing.content_type && listing.category === 'Electronics' && '⚡ Tech'}
+                  
+                  {/* Fallback to content_type or category */}
+                  {!['event', 'rental', 'booking', 'music', 'video', 'document'].includes(listing.content_type || '') && 
+                   !['Restaurants', 'Food & Drink', 'Services', 'Places', 'Hotels', 'Experiences', 'Art & Crafts', 'Fashion', 'Electronics'].includes(listing.category || '') && 
+                   (listing.content_type || listing.category) && 
+                   `${listing.content_type || listing.category}`}
+                </div>
+              </div>
+            )}
+
+            {/* Hover Information Bar (Desktop) / Always Show on Mobile */}
+            <div className={`absolute bottom-0 left-0 right-0 h-24 sm:h-28 bg-black/85 backdrop-blur-sm text-white p-2 sm:p-3 transition-all duration-300 flex flex-col ${
+              isHovered ? 'translate-y-0 opacity-100' : 'sm:translate-y-full sm:opacity-0 translate-y-0 opacity-100'
             }`}>
               {/* Title Section */}
-              <div className="mb-2">
-                <h3 className="font-semibold text-sm line-clamp-1 leading-tight">{listing.title}</h3>
+              <div className="mb-1 sm:mb-2">
+                <h3 className="font-semibold text-xs sm:text-sm line-clamp-1 leading-tight">{listing.title}</h3>
               </div>
               
               {/* Price & Location Section */}
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1 text-green-400">
+              <div className="flex items-center justify-between mb-1 sm:mb-2">
+                <div className="flex items-center gap-0.5 sm:gap-1 text-green-400">
                   {listing.price && (
                     <>
-                      <DollarSign size={12} />
-                      <span className="text-xs font-semibold">
+                      <DollarSign className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      <span className="text-[10px] sm:text-xs font-semibold">
                         {listing.price}
                       </span>
                     </>
                   )}
                 </div>
                 
-                <div className="flex items-center gap-1 text-gray-300">
+                <div className="flex items-center gap-0.5 sm:gap-1 text-gray-300">
                   {listing.location && (
                     <>
-                      <MapPin size={10} />
-                      <span className="text-[11px] truncate max-w-[120px]">{listing.location}</span>
+                      <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                      <span className="text-[9px] sm:text-[11px] truncate max-w-[80px] sm:max-w-[120px]">{listing.location}</span>
                     </>
                   )}
                 </div>
               </div>
               
               {/* Bottom Section - User & Date */}
-              <div className="flex items-center justify-between pt-1.5 border-t border-white/10 mt-auto">
+              <div className="flex items-center justify-between pt-1 sm:pt-1.5 border-t border-white/10 mt-auto">
                 {/* User Info - Clickable */}
                 <button
                   onClick={(e) => {
@@ -226,9 +368,9 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
                     e.stopPropagation()
                     window.location.href = `/profile/${listing.user_id}`
                   }}
-                  className="flex items-center gap-1.5 hover:bg-white/10 rounded-lg px-1 py-0.5 -ml-1 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 sm:gap-1.5 hover:bg-white/10 rounded-lg px-0.5 sm:px-1 py-0.5 -ml-1 transition-colors cursor-pointer"
                 >
-                  <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center overflow-hidden">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-600 flex items-center justify-center overflow-hidden">
                     {listing.profiles?.avatar_url ? (
                       <img
                         src={listing.profiles.avatar_url}
@@ -246,19 +388,19 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
                         }}
                       />
                     ) : (
-                      <User size={12} />
+                      <User className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     )}
                   </div>
-                  <span className="text-[11px] font-medium text-gray-200 truncate max-w-[100px]">
+                  <span className="text-[9px] sm:text-[11px] font-medium text-gray-200 truncate max-w-[60px] sm:max-w-[100px]">
                     {listing.profiles?.username || listing.profiles?.name || 'User'}
                   </span>
                 </button>
                 
                 {/* Date */}
                 <div className="flex items-center gap-0.5 text-gray-400">
-                  <Calendar size={9} />
-                  <span className="text-[10px]">
-                    {new Date(listing.created_at).toLocaleDateString()}
+                  <Calendar className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                  <span className="text-[8px] sm:text-[10px]">
+                    {new Date(listing.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
               </div>
@@ -274,7 +416,7 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
               e.preventDefault()
               e.stopPropagation()
             }}
-            className="absolute top-3 right-3 z-20"
+            className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20"
           >
             <SaveToFolderButton 
               itemId={listing.id} 

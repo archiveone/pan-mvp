@@ -324,7 +324,7 @@ export default function UnifiedContentCreator({ isOpen, onClose, onSuccess }: Un
       
       const uploadPromise = ImageService.uploadImages(allImages, 'content-images', 'posts')
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Upload timeout after 30 seconds. Check your internet connection or try smaller images.')), 30000)
+        setTimeout(() => reject(new Error('Upload timeout after 60 seconds. Check your internet connection or try smaller images.')), 60000)
       )
       
       const uploadResult = await Promise.race([uploadPromise, timeoutPromise]) as any
@@ -435,13 +435,31 @@ export default function UnifiedContentCreator({ isOpen, onClose, onSuccess }: Un
       
       if (result.success && result.contentId) {
         console.log('✅ Content created successfully!', result.contentId)
-        setIsLoading(false) // Stop loading first
-        onSuccess?.(result.contentId)
-        setTimeout(() => handleClose(), 100) // Small delay before closing
+        setIsLoading(false) // Stop loading BEFORE callbacks
+        
+        // Call success callback if provided
+        try {
+          onSuccess?.(result.contentId)
+        } catch (callbackError) {
+          console.error('⚠️ onSuccess callback error:', callbackError)
+        }
+        
+        // Close modal with slight delay to allow state updates
+        setTimeout(() => {
+          try {
+            handleClose()
+          } catch (closeError) {
+            console.error('⚠️ Close error:', closeError)
+            // Force reset form even if close fails
+            resetForm()
+            onClose()
+          }
+        }, 200)
       } else {
         const errorMsg = result.error || 'Failed to create content'
         console.error('❌ Database save failed:', errorMsg)
         setIsLoading(false)
+        setError(errorMsg)
         throw new Error(errorMsg)
       }
     } catch (err) {
@@ -454,8 +472,11 @@ export default function UnifiedContentCreator({ isOpen, onClose, onSuccess }: Un
       if (!error) {
         alert('Upload failed: ' + errorMessage)
       }
+    } finally {
+      // Ensure loading is always stopped
+      setIsLoading(false)
     }
-  }, [mainImage, title, description, tags, additionalMedia, audioFiles, videoFiles, documentFiles, postType, transactionCategory, transactionSubtype, price, currency, pricingOptions, eventDate, eventTime, venue, capacity, bookingDuration, maxPartySize, rentalPeriod, securityDeposit, user, error, onSuccess, handleClose])
+  }, [mainImage, title, description, tags, additionalMedia, audioFiles, videoFiles, documentFiles, postType, transactionCategory, transactionSubtype, price, currency, pricingOptions, eventDate, eventTime, venue, capacity, bookingDuration, maxPartySize, rentalPeriod, securityDeposit, user, error, onSuccess, handleClose, resetForm, onClose])
 
   if (!isOpen) return null
 

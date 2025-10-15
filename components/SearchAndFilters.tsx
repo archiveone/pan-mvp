@@ -114,9 +114,37 @@ export default function SearchAndFilters({
 
   return (
     <div className="search-section bg-white dark:bg-gray-900">
-      <div className="max-w-6xl mx-auto px-4 py-4 pb-0">
-        {/* Single Line Search Bar - Responsive */}
-        <div className="relative mb-0">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4 pb-0">
+        {/* Mobile: Search Bar with Green Icon */}
+        <div className="sm:hidden relative mb-0">
+          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full shadow-sm">
+            {/* Search Input */}
+            <div className="flex-1 px-4 py-2.5">
+              <div className="flex items-center gap-2">
+                <Search size={18} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={localSearchTerm}
+                  onChange={handleSearchChange}
+                  className="flex-1 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm bg-transparent"
+                />
+              </div>
+            </div>
+            
+            {/* Green Search/Filter Button */}
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className="m-1 p-2.5 bg-gradient-to-r from-lime-400 to-lime-300 hover:brightness-95 text-black rounded-full transition-all duration-200 active:scale-95 flex-shrink-0"
+              aria-label="Filters"
+            >
+              <Filter className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop: Full Search Bar */}
+        <div className="hidden sm:block relative mb-0">
           <div className="flex items-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full shadow-sm hover:shadow-md transition-shadow search-bar">
             {/* Search Input */}
             <div className="flex-1 px-4 py-2">
@@ -171,7 +199,7 @@ export default function SearchAndFilters({
             <div className="px-4 py-2">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors"
+                className="flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 <Filter size={16} />
                 <span className="text-sm">Filters</span>
@@ -200,37 +228,93 @@ export default function SearchAndFilters({
         
         {/* Advanced Filters Panel */}
         {showFilters && (
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="fixed sm:relative inset-0 sm:inset-auto z-50 sm:z-auto bg-white dark:bg-gray-900 sm:bg-gray-50 sm:dark:bg-gray-800 sm:rounded-lg p-4 sm:p-4 mb-0 sm:mb-4 overflow-y-auto sm:overflow-visible">
+            {/* Mobile Header */}
+            <div className="sm:hidden flex items-center justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Search & Filters</h2>
+              <button 
+                onClick={() => setShowFilters(false)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+
+            {/* Mobile Search Input */}
+            <div className="sm:hidden mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="What are you looking for?"
+                  value={localSearchTerm}
+                  onChange={handleSearchChange}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
+                />
+              </div>
+            </div>
+
+            {/* Mobile Location Input */}
+            <div className="sm:hidden mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location</label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Where?"
+                  value={localLocation}
+                  onChange={handleLocationChange}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
+                />
+              </div>
+            </div>
+
+            {/* Mobile Date Input */}
+            <div className="sm:hidden mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="date"
+                  placeholder="When?"
+                  value={localDate}
+                  onChange={handleDateChange}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Price Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price Range</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
                     placeholder="Min"
                     value={localPriceRange.min}
                     onChange={(e) => handlePriceRangeChange('min', parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
+                    className="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
                   />
-                  <span className="text-gray-500">-</span>
+                  <span className="text-gray-500 dark:text-gray-400">-</span>
                   <input
                     type="number"
                     placeholder="Max"
                     value={localPriceRange.max}
                     onChange={(e) => handlePriceRangeChange('max', parseInt(e.target.value) || 1000)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
+                    className="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
                   />
                 </div>
               </div>
               
               {/* Category Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => onCategoryChange?.(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
+                  className="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
                 >
                   {categories.map((category) => (
                     <option key={category.name} value={category.name}>
@@ -242,14 +326,14 @@ export default function SearchAndFilters({
               
               {/* Sort By */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sort By</label>
                 <select 
                   value={localSortBy}
                   onChange={(e) => {
                     setLocalSortBy(e.target.value)
                     onSortChange?.(e.target.value)
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
+                  className="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
                 >
                   <option value="trending">🔥 Trending</option>
                   <option value="popular">⭐ Popular</option>
@@ -262,20 +346,30 @@ export default function SearchAndFilters({
               
               {/* Availability */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Availability</label>
                 <select 
                   value={localAvailability}
                   onChange={(e) => {
                     setLocalAvailability(e.target.value)
                     onAvailabilityChange?.(e.target.value)
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
+                  className="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
                 >
                   <option value="all">All Items</option>
                   <option value="available">Available Now</option>
                   <option value="scheduled">Scheduled</option>
                 </select>
               </div>
+            </div>
+
+            {/* Mobile Apply Button */}
+            <div className="sm:hidden mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setShowFilters(false)}
+                className="w-full py-4 bg-gradient-to-r from-lime-400 to-lime-300 hover:brightness-95 text-black font-semibold rounded-xl transition-all duration-200 active:scale-95"
+              >
+                Apply Filters
+              </button>
             </div>
           </div>
         )}
