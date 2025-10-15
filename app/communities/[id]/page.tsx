@@ -53,13 +53,14 @@ interface Like {
   user_id: string
 }
 
-export default function CommunityDetailPage({ params }: { params: { id: string } }) {
+export default function CommunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { user } = useAuth()
   const [community, setCommunity] = useState<Community | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [isMember, setIsMember] = useState(false)
   const [showCreatePost, setShowCreatePost] = useState(false)
+  const [communityId, setCommunityId] = useState<string>('')
   const [newPost, setNewPost] = useState({
     title: '',
     content: '',
@@ -67,14 +68,17 @@ export default function CommunityDetailPage({ params }: { params: { id: string }
   })
 
   useEffect(() => {
-    if (params.id) {
-      fetchCommunity()
-      fetchPosts()
-      checkMembership()
-    }
-  }, [params.id, user])
+    params.then(({ id }) => {
+      setCommunityId(id)
+      if (id) {
+        fetchCommunity(id)
+        fetchPosts()
+        checkMembership()
+      }
+    })
+  }, [user])
 
-  const fetchCommunity = async () => {
+  const fetchCommunity = async (id: string) => {
     try {
       const { data, error } = await supabase
         .from('user_groups')
@@ -85,7 +89,7 @@ export default function CommunityDetailPage({ params }: { params: { id: string }
             avatar_url
           )
         `)
-        .eq('id', params.id)
+        .eq('id', id)
         .single()
 
       if (error) throw error
@@ -184,7 +188,7 @@ export default function CommunityDetailPage({ params }: { params: { id: string }
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || !community) return
+    if (!user || !community || !communityId) return
 
     try {
       // Create the post with community reference
@@ -196,7 +200,7 @@ export default function CommunityDetailPage({ params }: { params: { id: string }
           content: newPost.content,
           category: 'community',
           location: community.name, // Use community name as location
-          community_id: community.id // Store community reference
+          community_id: communityId // Store community reference
         }])
 
       if (postError) throw postError
