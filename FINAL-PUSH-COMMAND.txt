@@ -1,0 +1,9 @@
+✅ Build cache removed! Now run this command with your FULL token:
+
+git push https://YOUR_FULL_TOKEN@github.com/archiveone/pan-mvp.git main
+
+Replace YOUR_FULL_TOKEN with your complete token (the one that starts with ghp_)
+
+Example:
+git push https://ghp_abc123xyz456def789@github.com/archiveone/pan-mvp.git main
+

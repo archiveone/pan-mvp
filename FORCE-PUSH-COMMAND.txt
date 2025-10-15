@@ -1,0 +1,11 @@
+✅ Git history cleaned! Now run this command with your token:
+
+git push --force https://YOUR_TOKEN@github.com/archiveone/pan-mvp.git main
+
+Replace YOUR_TOKEN with your complete token (starts with ghp_)
+
+Example:
+git push --force https://ghp_abc123xyz456@github.com/archiveone/pan-mvp.git main
+
+Note: Using --force because we rewrote the git history to remove large files
+

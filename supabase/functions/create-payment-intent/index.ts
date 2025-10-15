@@ -17,7 +17,7 @@ serve(async (req) => {
     const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(
       Deno.env.get('STRIPE_SECRET_KEY')!,
       {
-        apiVersion: '2023-10-16',
+        apiVersion: '2025-09-30.clover',
       }
     )
 

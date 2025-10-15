@@ -1,0 +1,7 @@
+Replace YOUR_TOKEN below with your actual token, then run this command:
+
+git push https://YOUR_TOKEN@github.com/archiveone/pan-mvp.git main
+
+Example (if your token was ghp_abc123):
+git push https://ghp_abc123@github.com/archiveone/pan-mvp.git main
+
