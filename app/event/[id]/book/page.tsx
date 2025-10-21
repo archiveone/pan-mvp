@@ -21,19 +21,27 @@ export default function EventBookingPage() {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedTickets, setSelectedTickets] = useState<{ [ticketId: string]: number }>({});
-  const [attendeeDetails, setAttendeeDetails] = useState<{ [key: string]: any }[]>([]);
+  const [attendeeDetails, setAttendeeDetails] = useState<Array<{
+    first_name: string;
+    last_name: string;
+    email: string;
+    ticket_type: string;
+    ticket_title: string;
+  }>>([]);
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    if (params.id) {
+    if (params?.id) {
       loadEventData();
     }
-  }, [params.id]);
+  }, [params?.id]);
 
   const loadEventData = async () => {
+    if (!params?.id) return;
+    
     try {
       // Load event details (simplified - in real app, you'd have an event service)
-      const { data: eventData, error: eventError } = await supabase
+      const { data: eventData, error: eventError} = await supabase
         .from('events')
         .select('*')
         .eq('id', params.id)
@@ -95,7 +103,13 @@ export default function EventBookingPage() {
     }
 
     // Create attendee details array
-    const details = [];
+    const details: Array<{
+      first_name: string;
+      last_name: string;
+      email: string;
+      ticket_type: string;
+      ticket_title: string;
+    }> = [];
     let detailIndex = 0;
     
     for (const [ticketId, quantity] of Object.entries(selectedTickets)) {
@@ -120,7 +134,7 @@ export default function EventBookingPage() {
   const handlePaymentSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     
-    if (!user || !stripe || !elements) return;
+    if (!user || !stripe || !elements || !params?.id) return;
 
     setProcessing(true);
 

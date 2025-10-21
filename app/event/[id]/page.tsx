@@ -19,10 +19,14 @@ export default function EventDetailPage() {
   const [isInterested, setIsInterested] = useState(false)
 
   useEffect(() => {
-    loadEvent()
-  }, [params.id])
+    if (params?.id) {
+      loadEvent()
+    }
+  }, [params?.id])
 
   const loadEvent = async () => {
+    if (!params?.id) return
+    
     try {
       const { data, error } = await supabase
         .from('advanced_events')
@@ -60,7 +64,7 @@ export default function EventDetailPage() {
   }
 
   const toggleInterested = async () => {
-    if (!user) {
+    if (!user || !params?.id) {
       router.push('/login')
       return
     }
@@ -294,7 +298,7 @@ export default function EventDetailPage() {
               {/* Actions */}
               <div className="space-y-3 mb-6">
                 <button
-                  onClick={() => router.push(`/event/${params.id}/book`)}
+                  onClick={() => params?.id && router.push(`/event/${params.id}/book`)}
                   className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
                 >
                   <Ticket className="w-5 h-5" />

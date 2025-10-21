@@ -17,10 +17,14 @@ export default function DocumentDetailPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadDocument()
-  }, [params.id])
+    if (params?.id) {
+      loadDocument()
+    }
+  }, [params?.id])
 
   const loadDocument = async () => {
+    if (!params?.id) return
+    
     try {
       const { data, error } = await supabase
         .from('document_posts')
@@ -46,7 +50,7 @@ export default function DocumentDetailPage() {
   }
 
   const handleDownload = async () => {
-    if (!document) return
+    if (!document || !params?.id) return
 
     // Increment download count
     await supabase.rpc('increment_document_downloads', { post_id: params.id })

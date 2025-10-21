@@ -11,7 +11,8 @@ import BottomNav from '@/components/BottomNav';
 import * as Icons from 'lucide-react';
 
 export default function BoxDetailPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string | undefined;
   const router = useRouter();
   const { user } = useAuth();
   const [box, setBox] = useState<HubBox | null>(null);

@@ -16,7 +16,8 @@ import AppleStyleBoxEditor from '@/components/AppleStyleBoxEditor';
 import { ImageService } from '@/services/imageService';
 import {
   TrendingUp, TrendingDown, Eye, Heart, Bookmark, DollarSign,
-  Users, MapPin, Activity, PlayCircle, ShoppingCart, BarChart3, Target, Download
+  Users, MapPin, Activity, PlayCircle, ShoppingCart, BarChart3, Target, Download,
+  Music, Video, Image as ImageIcon, Home, Utensils, Calendar as CalendarIcon, ShoppingBag, FileText
 } from 'lucide-react';
 
 interface AnalyticsData {
