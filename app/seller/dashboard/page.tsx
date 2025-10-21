@@ -30,7 +30,7 @@ export default function SellerDashboardPage() {
       const listingsResult = await MarketplaceService.searchListings({
         seller_id: user.id,
         limit: 100,
-      });
+      } as any);
 
       if (listingsResult.success && listingsResult.listings) {
         setListings(listingsResult.listings);

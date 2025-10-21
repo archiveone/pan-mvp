@@ -19,10 +19,14 @@ export default function RentalDetailPage() {
   const [guests, setGuests] = useState(1)
 
   useEffect(() => {
-    loadListing()
-  }, [params.id])
+    if (params?.id) {
+      loadListing()
+    }
+  }, [params?.id])
 
   const loadListing = async () => {
+    if (!params?.id) return
+    
     try {
       const { data, error } = await supabase
         .from('bookable_listings')
