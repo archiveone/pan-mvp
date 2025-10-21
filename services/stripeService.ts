@@ -1,9 +1,15 @@
 import Stripe from 'stripe';
 import { supabase } from '../lib/supabase';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
-});
+// Helper to get Stripe instance only when needed
+const getStripe = () => {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('Stripe API key not configured');
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-09-30.clover' as any,
+  });
+};
 
 export interface PaymentIntentData {
   amount: number;
@@ -23,6 +29,7 @@ export class StripeService {
   // Payment Processing
   static async createPaymentIntent(data: PaymentIntentData) {
     try {
+      const stripe = getStripe();
       const paymentIntent = await stripe.paymentIntents.create({
         amount: data.amount,
         currency: data.currency || 'usd',
@@ -65,6 +72,7 @@ export class StripeService {
 
   static async confirmPaymentIntent(paymentIntentId: string) {
     try {
+      const stripe = getStripe();
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       
       if (paymentIntent.status === 'succeeded') {
@@ -87,6 +95,7 @@ export class StripeService {
   // Account Setup for Sellers
   static async createConnectAccount(userId: string, email: string) {
     try {
+      const stripe = getStripe();
       const account = await stripe.accounts.create({
         type: 'express',
         email,
@@ -138,6 +147,7 @@ export class StripeService {
   // Identity Verification
   static async createVerificationSession(data: VerificationSessionData) {
     try {
+      const stripe = getStripe();
       const session = await stripe.identity.verificationSessions.create({
         type: data.type,
         metadata: {
@@ -177,6 +187,7 @@ export class StripeService {
 
   static async getVerificationSession(sessionId: string) {
     try {
+      const stripe = getStripe();
       const session = await stripe.identity.verificationSessions.retrieve(sessionId);
       
       // Update database
@@ -211,6 +222,8 @@ export class StripeService {
   // Subscriptions
   static async createSubscription(userId: string, priceId: string) {
     try {
+      const stripe = getStripe();
+      
       // Get or create customer
       const { data: profile } = await supabase
         .from('profiles')
