@@ -34,7 +34,7 @@ export default function ContactButton({ postId, sellerId, sellerName, className 
 
     try {
       // Check if conversation already exists
-      const { data: existingConversations } = await MessagingService.getConversations(user.id);
+      const existingConversations = await MessagingService.getUserConversations();
       
       if (existingConversations?.success && existingConversations.conversations) {
         const existingConv = existingConversations.conversations.find(conv => 

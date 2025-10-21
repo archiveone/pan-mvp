@@ -64,7 +64,7 @@ export default function CommentSection({ contentId, contentType = 'post' }: Comm
         if (c.replies && c.replies.length > 0) {
           console.log(`    └─ Has ${c.replies.length} replies`)
           c.replies.forEach((r, ri) => {
-            console.log(`       ${ri + 1}. ${r.profiles?.name || 'User'}: ${r.content.substring(0, 30)}`)
+            console.log(`       ${ri + 1}. ${(r as any).profiles?.name || 'User'}: ${r.content.substring(0, 30)}`)
           })
         }
       })
