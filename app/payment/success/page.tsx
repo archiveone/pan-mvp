@@ -14,7 +14,7 @@ export default function PaymentSuccessPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const intentId = searchParams.get('payment_intent');
+    const intentId = searchParams?.get('payment_intent');
     if (intentId) {
       setPaymentIntentId(intentId);
     }

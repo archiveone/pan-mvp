@@ -275,7 +275,7 @@ export default function NotificationsPage() {
               <div
                 key={notification.id}
                 className={`bg-white rounded-lg border transition-colors ${
-                  notification.read 
+                  (notification as any).read 
                     ? 'border-gray-200' 
                     : 'border-blue-200 bg-blue-50'
                 }`}
@@ -302,12 +302,12 @@ export default function NotificationsPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h3 className={`text-sm font-medium ${
-                            notification.read ? 'text-gray-900' : 'text-gray-900'
+                            (notification as any).read ? 'text-gray-900' : 'text-gray-900'
                           }`}>
-                            {notification.title}
+                            {(notification as any).title}
                           </h3>
                           <p className="text-sm text-gray-600 mt-1">
-                            {notification.message}
+                            {(notification as any).message}
                           </p>
                           <p className="text-xs text-gray-400 mt-2">
                             {formatTimeAgo(notification.created_at)}
@@ -316,7 +316,7 @@ export default function NotificationsPage() {
 
                         {/* Actions */}
                         <div className="flex items-center space-x-1 ml-2">
-                          {!notification.read && (
+                          {!(notification as any).read && (
                             <button
                               onClick={() => handleMarkAsRead(notification.id)}
                               className="text-blue-600 hover:text-blue-700 p-1"
