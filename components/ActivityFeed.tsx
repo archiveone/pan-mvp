@@ -130,11 +130,11 @@ export default function ActivityFeed({
             id: `community-${community.id}`,
             type: 'community',
             title: 'New Community',
-            description: `${community.profiles?.name || 'Someone'} created community: ${community.name}`,
+            description: `${(community.profiles as any)?.name || 'Someone'} created community: ${community.name}`,
             timestamp: community.created_at,
             user_id: community.created_by,
-            user_name: community.profiles?.name,
-            user_avatar: community.profiles?.avatar_url,
+            user_name: (community.profiles as any)?.name,
+            user_avatar: (community.profiles as any)?.avatar_url,
             related_id: community.id,
             metadata: { name: community.name, description: community.description }
           });
