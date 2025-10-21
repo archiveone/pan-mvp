@@ -68,11 +68,11 @@ export default function ActivityFeed({
             id: `msg-${msg.id}`,
             type: 'message',
             title: 'New Message',
-            description: `${msg.sender?.name || 'Someone'} sent a message`,
+            description: `${(msg.sender as any)?.name || 'Someone'} sent a message`,
             timestamp: msg.created_at,
             user_id: msg.sender_id,
-            user_name: msg.sender?.name,
-            user_avatar: msg.sender?.avatar_url,
+            user_name: (msg.sender as any)?.name,
+            user_avatar: (msg.sender as any)?.avatar_url,
             related_id: msg.id,
             metadata: { content: msg.content }
           });
@@ -99,11 +99,11 @@ export default function ActivityFeed({
             id: `post-${post.id}`,
             type: 'listing',
             title: 'New Listing',
-            description: `${post.profiles?.name || 'Someone'} created a new listing: ${post.title}`,
+            description: `${(post.profiles as any)?.name || 'Someone'} created a new listing: ${post.title}`,
             timestamp: post.created_at,
             user_id: post.user_id,
-            user_name: post.profiles?.name,
-            user_avatar: post.profiles?.avatar_url,
+            user_name: (post.profiles as any)?.name,
+            user_avatar: (post.profiles as any)?.avatar_url,
             related_id: post.id,
             metadata: { title: post.title, content: post.content }
           });
