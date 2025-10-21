@@ -748,7 +748,7 @@ function WidgetContent({
       return (
         <div className="space-y-3">
           {topCountries.length > 0 ? topCountries.map(([country, count]: any, i) => {
-            const maxCount = topCountries[0][1];
+            const maxCount = topCountries[0][1] as number;
             const percentage = (count / maxCount) * 100;
             
             return (
