@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { BookingService } from '@/services/bookingService'
 import { PaymentService } from '@/services/paymentService'
-import { BookingSlot, BookingRequest } from '@/services/bookingService'
+// import { BookingSlot, BookingRequest } from '@/services/bookingService'
+type BookingSlot = any
+type BookingRequest = any
 
 interface BookingInterfaceProps {
   contentId: string
@@ -80,7 +82,7 @@ export default function BookingInterface({
       const endDate = new Date(selectedDate)
       endDate.setDate(endDate.getDate() + 30)
 
-      const result = await BookingService.getAvailability(
+      const result = await BookingService.checkAvailability(
         contentId,
         selectedDate,
         endDate.toISOString().split('T')[0]
