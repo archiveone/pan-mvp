@@ -28,8 +28,8 @@ export default function NotificationsPage() {
   // Filter and sort notifications
   const filteredNotifications = notifications
     .filter(notification => {
-      if (filter === 'unread') return !notification.read;
-      if (filter === 'read') return notification.read;
+      if (filter === 'unread') return !(notification as any).read;
+      if (filter === 'read') return (notification as any).read;
       return true;
     })
     .sort((a, b) => {

@@ -26,8 +26,10 @@ export default function MusicDetailPage() {
   const streamStartTime = useRef<number>(0)
 
   useEffect(() => {
-    loadMusic()
-  }, [params.id])
+    if (params?.id) {
+      loadMusic()
+    }
+  }, [params?.id])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -49,6 +51,8 @@ export default function MusicDetailPage() {
   }, [])
 
   const loadMusic = async () => {
+    if (!params?.id) return
+    
     try {
       const { data, error } = await supabase
         .from('music_posts')
@@ -98,7 +102,7 @@ export default function MusicDetailPage() {
   }
 
   const togglePlay = () => {
-    if (!audioRef.current) return
+    if (!audioRef.current || !params?.id) return
 
     if (isPlaying) {
       audioRef.current.pause()
@@ -128,7 +132,7 @@ export default function MusicDetailPage() {
   }
 
   const toggleSave = async () => {
-    if (!user) {
+    if (!user || !params?.id) {
       router.push('/login')
       return
     }
