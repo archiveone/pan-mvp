@@ -18,7 +18,7 @@ export default function MarketplaceBuyPage() {
   const [seller, setSeller] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [deliveryMethod, setDeliveryMethod] = useState('pickup');
+  const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'shipping' | 'digital' | 'local_delivery'>('pickup');
   const [deliveryAddress, setDeliveryAddress] = useState({
     street: '',
     city: '',
@@ -33,18 +33,20 @@ export default function MarketplaceBuyPage() {
   const [order, setOrder] = useState<any>(null);
 
   useEffect(() => {
-    if (params.id) {
+    if (params?.id) {
       loadListingData();
     }
-  }, [params.id]);
+  }, [params?.id]);
 
   const loadListingData = async () => {
+    if (!params?.id) return;
+    
     try {
       const result = await MarketplaceService.getListing(params.id as string);
       
       if (result.success && result.listing) {
         setListing(result.listing);
-        setSeller(result.listing.seller);
+        setSeller((result.listing as any).seller);
       } else {
         throw new Error(result.error || 'Failed to load listing');
       }
@@ -89,7 +91,7 @@ export default function MarketplaceBuyPage() {
   const handlePaymentSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     
-    if (!user || !stripe || !elements) return;
+    if (!user || !stripe || !elements || !params?.id) return;
 
     setProcessing(true);
 
@@ -379,7 +381,7 @@ export default function MarketplaceBuyPage() {
                               name="deliveryMethod"
                               value={method}
                               checked={deliveryMethod === method}
-                              onChange={(e) => setDeliveryMethod(e.target.value)}
+                              onChange={(e) => setDeliveryMethod(e.target.value as any)}
                               className="mr-2"
                             />
                             <span className="capitalize">{method.replace('_', ' ')}</span>
