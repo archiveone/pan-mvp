@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { PlayCircle, Heart, MapPin, Star, Calendar, CreditCard } from 'lucide-react';
 import { useSavedPosts } from '../hooks/useSavedListings';
-import BookingInterface from './BookingInterface';
+// import BookingInterface from './BookingInterface'; // Removed - not needed
 import PaymentModal from './PaymentModal';
 import SaveToFolderButton from './SaveToFolderButton';
 
