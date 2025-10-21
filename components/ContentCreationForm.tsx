@@ -20,11 +20,11 @@ export default function ContentCreationForm({
   initialData 
 }: ContentCreationFormProps) {
   const [formData, setFormData] = useState({
-    title: initialData?.title || '',
-    content: initialData?.content || '',
-    category: initialData?.category || '',
-    location: initialData?.location || '',
-    tags: initialData?.tags?.join(', ') || '',
+    title: (initialData as any)?.title || '',
+    content: (initialData as any)?.content || '',
+    category: (initialData as any)?.category || '',
+    location: (initialData as any)?.location || '',
+    tags: (initialData as any)?.tags?.join(', ') || '',
     price_amount: (initialData as any)?.price_amount || '',
     currency: (initialData as any)?.currency || 'EUR',
     event_date: (initialData as any)?.event_date || '',
