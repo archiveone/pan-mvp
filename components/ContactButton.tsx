@@ -52,9 +52,9 @@ export default function ContactButton({ postId, sellerId, sellerName, className 
       // Create new conversation
       const result = await MessagingService.getOrCreateConversation(sellerId);
 
-      if (result.success && result.conversation) {
+      if (result.success && result.conversationId) {
         // Redirect to new conversation
-        window.location.href = `/messages?conversation=${result.conversation.id}`;
+        window.location.href = `/messages?conversation=${result.conversationId}`;
       } else {
         setError(result.error || 'Failed to start conversation');
       }
