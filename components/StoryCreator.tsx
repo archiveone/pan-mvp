@@ -230,7 +230,10 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ isOpen, onClose, onStoryCre
 
   const handleDrawStart = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (selectedTool !== 'draw') return;
-    e.preventDefault();
+    // Only prevent default for mouse events, touch events are handled by touchAction: 'none' CSS
+    if ('button' in e) {
+      e.preventDefault();
+    }
     
     const point = getCanvasPoint(e);
     if (!point || !canvasContext) return;
@@ -257,7 +260,10 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ isOpen, onClose, onStoryCre
 
   const handleDrawMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing || selectedTool !== 'draw') return;
-    e.preventDefault();
+    // Only prevent default for mouse events, touch events are handled by touchAction: 'none' CSS
+    if ('button' in e) {
+      e.preventDefault();
+    }
     
     const point = getCanvasPoint(e);
     if (!point || !canvasContext || !lastPoint) return;
@@ -458,18 +464,13 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ isOpen, onClose, onStoryCre
       
       // 5. Create story in database
       const createResult = await StoriesService.createStory({
-        user_id: user.id,
-        media_url: uploadResult.url,
-        media_type: mediaType,
-        thumbnail_url: thumbnailUrl,
-        duration: mediaType === 'video' ? 15 : 5,
-        editor_data: editorDataToSave,
-        audio_url: musicUrl,
-        audio_name: musicName || undefined,
-        caption: undefined
+        userId: user.id,
+        contentType: mediaType,
+        mediaUrl: uploadResult.url,
+        duration: mediaType === 'video' ? 15 : 5
       });
       
-      if (!createResult.success || !createResult.data) {
+      if (!createResult.success || !createResult.story) {
         throw new Error(createResult.error || 'Failed to create story');
       }
       
@@ -479,7 +480,7 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ isOpen, onClose, onStoryCre
       alert('✨ Story published successfully!');
       
       // 6. Close modal and trigger callback
-      onStoryCreated(createResult.data);
+      onStoryCreated(createResult.story);
       
     } catch (error) {
       console.error('❌ Error publishing story:', error);

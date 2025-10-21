@@ -33,13 +33,13 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!user) {
-      router.push(`/listing/${params.id}`)
+      router.push(`/listing/${params?.id || ''}`)
       return
     }
-    if (params.id) {
+    if (params?.id) {
       loadListing(params.id as string)
     }
-  }, [params.id, user, router])
+  }, [params?.id, user, router])
 
   const loadListing = async (id: string) => {
     try {
@@ -175,7 +175,7 @@ export default function CheckoutPage() {
         borderRadius: '8px',
       },
     },
-  } : null
+  } : undefined
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

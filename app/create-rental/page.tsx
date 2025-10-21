@@ -83,7 +83,7 @@ export default function CreateRentalPage() {
         ...rentalData,
         owner_id: user.id,
         status: 'available',
-      });
+      } as any);
 
       if (result.success && result.item) {
         alert('Rental item created successfully!');

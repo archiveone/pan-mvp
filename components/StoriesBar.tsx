@@ -98,10 +98,10 @@ const StoriesBar: React.FC = () => {
               onClick={handleCreateStory}
               className="flex-shrink-0 flex flex-col items-center gap-2 group"
             >
-              <div className="relative">
+              <div className="relative p-1 overflow-visible">
                 {myStories.length > 0 ? (
                   // User has stories - show their avatar
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-[2px]">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-[2px] group-hover:scale-105 transition-transform">
                     <div className="w-full h-full rounded-full bg-white dark:bg-gray-900 p-[2px]">
                       <img
                         src={user?.user_metadata?.avatar_url || '/default-avatar.png'}
@@ -112,16 +112,16 @@ const StoriesBar: React.FC = () => {
                   </div>
                 ) : (
                   // No stories - show add button
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-lime-400 to-lime-300 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-lime-400 to-lime-300 flex items-center justify-center group-hover:scale-110 transition-all duration-300">
                     <Plus size={32} className="text-white" />
                   </div>
                 )}
                 {/* Add icon overlay */}
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-500 rounded-full border-2 border-white dark:border-gray-900 flex items-center justify-center">
+                <div className="absolute bottom-0 right-0 w-6 h-6 bg-blue-500 rounded-full border-2 border-white dark:border-gray-900 flex items-center justify-center group-hover:scale-110 transition-all duration-300">
                   <Camera size={14} className="text-white" />
                 </div>
               </div>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 max-w-[64px] truncate">
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 max-w-[64px] truncate text-center">
                 {myStories.length > 0 ? 'Your Story' : 'Add Story'}
               </span>
             </button>
@@ -133,20 +133,22 @@ const StoriesBar: React.FC = () => {
                 onClick={() => handleViewStory(userStory)}
                 className="flex-shrink-0 flex flex-col items-center gap-2 group"
               >
-                <div className={`w-16 h-16 rounded-full ${
-                  userStory.hasUnviewed
-                    ? 'bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600'
-                    : 'bg-gray-300 dark:bg-gray-700'
-                } p-[2px] group-hover:scale-105 transition-transform`}>
-                  <div className="w-full h-full rounded-full bg-white dark:bg-gray-900 p-[2px]">
-                    <img
-                      src={userStory.avatar_url || '/default-avatar.png'}
-                      alt={userStory.username}
-                      className="w-full h-full rounded-full object-cover"
-                    />
+                <div className="relative p-1 overflow-visible">
+                  <div className={`w-16 h-16 rounded-full ${
+                    userStory.hasUnviewed
+                      ? 'bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600'
+                      : 'bg-gray-300 dark:bg-gray-700'
+                  } p-[2px] group-hover:scale-110 transition-all duration-300`}>
+                    <div className="w-full h-full rounded-full bg-white dark:bg-gray-900 p-[2px]">
+                      <img
+                        src={userStory.avatar_url || '/default-avatar.png'}
+                        alt={userStory.username}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    </div>
                   </div>
                 </div>
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 max-w-[64px] truncate">
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 max-w-[64px] truncate text-center">
                   {userStory.username}
                 </span>
               </button>

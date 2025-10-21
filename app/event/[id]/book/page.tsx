@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Calendar, MapPin, Clock, Users, CreditCard, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { TicketingService, Event, Ticket, Booking } from '@/services/ticketingService';
-import { useStripe, useElements, PaymentElement } from '@stripe/stripe-js';
+import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { supabase } from '@/lib/supabase';
 
 export default function EventBookingPage() {

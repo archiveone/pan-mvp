@@ -164,11 +164,6 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
         const isAudio = !!audioUrl
         const isHovered = hoveredId === listing.id
         
-        // Debug logging for profile data
-        if (listing.profiles) {
-          console.log('Listing:', listing.title, 'Profile:', listing.profiles, 'Avatar URL:', listing.profiles.avatar_url)
-        }
-        
         return (
           <div
             key={listing.id}

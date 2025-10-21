@@ -109,7 +109,7 @@ export default function CreateListingPage() {
         favorites_count: 0,
         rating_average: 0,
         rating_count: 0,
-      });
+      } as any);
 
       if (result.success && result.listing) {
         alert('Listing created successfully!');

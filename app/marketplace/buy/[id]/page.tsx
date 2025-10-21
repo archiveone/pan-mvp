@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Star, Heart, Share2, Shield, Truck, CreditCard, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { MarketplaceService } from '@/services/marketplaceService';
-import { useStripe, useElements, PaymentElement } from '@stripe/stripe-js';
+import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 
 export default function MarketplaceBuyPage() {
   const router = useRouter();

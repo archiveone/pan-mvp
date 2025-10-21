@@ -46,7 +46,7 @@ export default function CollectionDetailPage() {
   const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
-  const collectionId = params.id as string;
+  const collectionId = params?.id as string;
 
   const [collection, setCollection] = useState<HubBox | null>(null);
   const [items, setItems] = useState<CollectionItem[]>([]);

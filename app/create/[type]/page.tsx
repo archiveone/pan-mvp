@@ -132,10 +132,10 @@ export default function CreateContentType() {
   const { user } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({})
+  const [formData, setFormData] = useState<any>({})
   const [selectedFiles, setSelectedFiles] = useState([])
 
-  const contentType = params.type as string
+  const contentType = params?.type as string
   const config = contentTypeConfigs[contentType as keyof typeof contentTypeConfigs]
 
   if (!config) {

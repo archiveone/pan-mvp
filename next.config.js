@@ -77,7 +77,7 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(self), microphone=(self), geolocation=(self), notifications=(self)'
+            value: 'camera=(self), microphone=(self), geolocation=(self)'
           },
           {
             key: 'Content-Security-Policy',
@@ -144,7 +144,7 @@ const nextConfig = {
   },
 
   // Output configuration
-  output: 'standalone',
+  // output: 'standalone', // Commented out for Vercel deployment - uncomment for Docker
   
   // Enable SWC plugins
   modularizeImports: {

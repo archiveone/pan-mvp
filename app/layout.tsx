@@ -90,9 +90,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Pan" />
-        <link rel="apple-touch-icon" href="/icons/icon-180x180.png" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
+        <link rel="apple-touch-icon" href="/favicon_io/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/favicon_io/android-chrome-192x192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/favicon_io/android-chrome-512x512.png" />
       </head>
       <body className={inter.className}>
         <ThemeProvider>
