@@ -88,10 +88,10 @@ export default function CustomInboxPage() {
       if (assignedResult.success && assignedResult.data) {
         // Load full conversation data
         const allConversations = await MessagingService.getUserConversations();
-        if (Array.isArray(allConversations)) {
+        if (Array.isArray(allConversations) && assignedResult.data) {
           // Filter to only show conversations assigned to this inbox
           const filteredConvs = allConversations.filter(conv => 
-            assignedResult.data.includes(conv.id)
+            assignedResult.data!.includes(conv.id)
           );
           setConversations(filteredConvs);
         }

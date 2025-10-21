@@ -32,10 +32,10 @@ export default function EditListingPage() {
       router.push('/')
       return
     }
-    if (params.id) {
+    if (params?.id) {
       loadListing(params.id as string)
     }
-  }, [params.id, user, router])
+  }, [params?.id, user, router])
 
   const loadListing = async (id: string) => {
     try {
@@ -81,6 +81,11 @@ export default function EditListingPage() {
     
     if (!title.trim() || !content.trim()) {
       alert('Title and content are required')
+      return
+    }
+
+    if (!params?.id) {
+      alert('Invalid listing ID')
       return
     }
 
@@ -151,7 +156,7 @@ export default function EditListingPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => router.push(`/listing/${params.id}`)}
+              onClick={() => params?.id && router.push(`/listing/${params.id}`)}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
               <ArrowLeft size={24} className="text-gray-900 dark:text-gray-100" />
@@ -305,7 +310,7 @@ export default function EditListingPage() {
           <div className="flex gap-4 pt-4">
             <button
               type="button"
-              onClick={() => router.push(`/listing/${params.id}`)}
+              onClick={() => params?.id && router.push(`/listing/${params.id}`)}
               className="flex-1 px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all font-medium flex items-center justify-center gap-2"
             >
               <X size={20} />
