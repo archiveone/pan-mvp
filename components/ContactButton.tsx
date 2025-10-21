@@ -50,11 +50,7 @@ export default function ContactButton({ postId, sellerId, sellerName, className 
       }
 
       // Create new conversation
-      const result = await MessagingService.createConversation(
-        'direct',
-        [sellerId],
-        `${user.full_name || 'You'} & ${sellerName}`
-      );
+      const result = await MessagingService.getOrCreateConversation(sellerId);
 
       if (result.success && result.conversation) {
         // Redirect to new conversation
