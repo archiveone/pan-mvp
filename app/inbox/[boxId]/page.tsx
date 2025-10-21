@@ -16,7 +16,8 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
 export default function CustomInboxPage() {
-  const { boxId } = useParams();
+  const params = useParams();
+  const boxId = params?.boxId as string | undefined;
   const router = useRouter();
   const { user } = useAuth();
   const [box, setBox] = useState<HubBox | null>(null);

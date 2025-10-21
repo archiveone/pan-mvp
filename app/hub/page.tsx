@@ -440,7 +440,7 @@ export default function AdvancedHub() {
 
   const handleBoxClick = (box: HubBox) => {
     // Special navigation for dashboard boxes
-    if (box.box_type === 'dashboard') {
+    if (box.box_type === 'custom' && box.title === 'Dashboard') {
       router.push('/dashboard-new');
       return;
     }
@@ -791,7 +791,7 @@ export default function AdvancedHub() {
 
                       {/* Box Content Preview */}
                       <div className="flex-1 min-h-0 mb-2">
-                        {box.box_type === 'dashboard' ? (
+                        {box.box_type === 'custom' && box.title === 'Dashboard' ? (
                           /* Dashboard Preview */
                           <div className="space-y-3">
                             <div className="grid grid-cols-2 gap-2">
