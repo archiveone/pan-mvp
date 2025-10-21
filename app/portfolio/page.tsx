@@ -13,7 +13,7 @@ import { ArrowLeft, Upload, Trash2, FileText, Image, Video, Music, Download } fr
 export default function PortfolioPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [portfolioFiles, setPortfolioFiles] = useState([]);
+  const [portfolioFiles, setPortfolioFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +31,7 @@ export default function PortfolioPage() {
     
     try {
       const result = await getPortfolioFiles(user.id);
-      if (result.success) {
+      if (result.success && result.data) {
         setPortfolioFiles(result.data);
       }
     } catch (error) {
