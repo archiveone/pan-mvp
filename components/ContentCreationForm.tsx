@@ -136,8 +136,7 @@ export default function ContentCreationForm({
       }
 
       // Create content using Supabase directly (since we don't have a create method in ContentService yet)
-      const { createClient } = await import('@/lib/supabase')
-      const supabase = createClient()
+      const { supabase } = await import('@/lib/supabase')
       
       const { data, error } = await supabase
         .from('posts')
