@@ -24,7 +24,7 @@ const CommentForm: React.FC<CommentFormProps> = ({ onSubmit, placeholder = "Add 
 
   return (
     <form onSubmit={handleSubmit} className="flex items-start gap-3 mt-4">
-      <img src={currentUser.avatarUrl} alt="Your avatar" className="w-10 h-10 rounded-full" />
+      <img src={(currentUser as any).avatarUrl} alt="Your avatar" className="w-10 h-10 rounded-full" />
       <div className="flex-1">
         <textarea
           value={content}
