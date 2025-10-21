@@ -26,10 +26,14 @@ export default function VideoDetailPage() {
   const streamStartTime = useRef<number>(0)
 
   useEffect(() => {
-    loadVideo()
-  }, [params.id])
+    if (params?.id) {
+      loadVideo()
+    }
+  }, [params?.id])
 
   const loadVideo = async () => {
+    if (!params?.id) return
+    
     try {
       const { data, error } = await supabase
         .from('video_posts')
@@ -67,7 +71,7 @@ export default function VideoDetailPage() {
   }
 
   const togglePlay = () => {
-    if (!videoRef.current) return
+    if (!videoRef.current || !params?.id) return
 
     if (isPlaying) {
       videoRef.current.pause()
