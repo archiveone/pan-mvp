@@ -17,8 +17,8 @@ export default function VerificationPage() {
   useEffect(() => {
     const initializeVerification = async () => {
       try {
-        const sessionId = searchParams.get('session_id');
-        const clientSecret = searchParams.get('client_secret');
+        const sessionId = searchParams?.get('session_id');
+        const clientSecret = searchParams?.get('client_secret');
 
         if (!sessionId || !clientSecret) {
           setError('Missing verification parameters');
@@ -32,7 +32,7 @@ export default function VerificationPage() {
         }
 
         // Initialize the verification flow
-        const verificationFlow = new StripeIdentityVerificationFlow({
+        const verificationFlow = new (window as any).StripeIdentityVerificationFlow({
           stripe,
           sessionId,
           clientSecret,
