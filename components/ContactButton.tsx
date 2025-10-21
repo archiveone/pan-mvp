@@ -37,9 +37,9 @@ export default function ContactButton({ postId, sellerId, sellerName, className 
       const existingConversations = await MessagingService.getUserConversations();
       
       if (Array.isArray(existingConversations)) {
-        const existingConv = existingConversations.find(conv => 
+        const existingConv = existingConversations.find((conv: any) => 
           conv.type === 'direct' && 
-          (conv as any).participants.some((p: any) => p.user_id === sellerId)
+          conv.participants.some((p: any) => p.user_id === sellerId)
         );
 
         if (existingConv) {
