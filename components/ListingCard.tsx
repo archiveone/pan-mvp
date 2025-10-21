@@ -166,8 +166,8 @@ const ListingCard: React.FC<{ listing: Listing }> = ({ listing }) => {
       </div>
     </Link>
 
-    {/* Booking Modal */}
-    <BookingInterface
+    {/* Booking Modal - Commented out (component removed) */}
+    {/* <BookingInterface
       isOpen={showBookingModal}
       onClose={() => setShowBookingModal(false)}
       contentId={listing.id}
@@ -178,7 +178,7 @@ const ListingCard: React.FC<{ listing: Listing }> = ({ listing }) => {
         console.log('Booking successful:', bookingId);
         setShowBookingModal(false);
       }}
-    />
+    /> */}
 
     {/* Payment Modal */}
     <PaymentModal
