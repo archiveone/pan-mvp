@@ -290,37 +290,7 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
               )}
             </div>
 
-            {/* Content Type Badge - Enhanced with Categories */}
-            {(listing.content_type || listing.category) && (
-              <div className="absolute top-2 left-2 z-10">
-                <div className="bg-black/80 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm font-medium">
-                  {/* Primary content types */}
-                  {listing.content_type === 'event' && '🎪 Event'}
-                  {listing.content_type === 'rental' && '🏠 Stay'}
-                  {listing.content_type === 'booking' && '🔑 Booking'}
-                  {listing.content_type === 'music' && '🎵 Music'}
-                  {listing.content_type === 'video' && '🎬 Video'}
-                  {listing.content_type === 'document' && '📄 Doc'}
-                  
-                  {/* Category-based types */}
-                  {!listing.content_type && listing.category === 'Restaurants' && '🍽️ Restaurant'}
-                  {!listing.content_type && listing.category === 'Food & Drink' && '🍽️ Food'}
-                  {!listing.content_type && listing.category === 'Services' && '✨ Service'}
-                  {!listing.content_type && listing.category === 'Places' && '📍 Place'}
-                  {!listing.content_type && listing.category === 'Hotels' && '🏨 Hotel'}
-                  {!listing.content_type && listing.category === 'Experiences' && '🎭 Experience'}
-                  {!listing.content_type && listing.category === 'Art & Crafts' && '🎨 Art'}
-                  {!listing.content_type && listing.category === 'Fashion' && '👕 Fashion'}
-                  {!listing.content_type && listing.category === 'Electronics' && '⚡ Tech'}
-                  
-                  {/* Fallback to content_type or category */}
-                  {!['event', 'rental', 'booking', 'music', 'video', 'document'].includes(listing.content_type || '') && 
-                   !['Restaurants', 'Food & Drink', 'Services', 'Places', 'Hotels', 'Experiences', 'Art & Crafts', 'Fashion', 'Electronics'].includes(listing.category || '') && 
-                   (listing.content_type || listing.category) && 
-                   `${listing.content_type || listing.category}`}
-                </div>
-              </div>
-            )}
+            {/* Content Type Badge - REMOVED per user request */}
 
             {/* Hover Information Bar (Desktop) / Always Show on Mobile */}
             <div className={`absolute bottom-0 left-0 right-0 h-24 sm:h-28 bg-black/85 backdrop-blur-sm text-white p-2 sm:p-3 transition-all duration-300 flex flex-col ${
