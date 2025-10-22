@@ -72,7 +72,7 @@ export class UnifiedFeedService {
     const allContent: UnifiedFeedItem[] = [];
 
     try {
-      // Fetch from all tables in parallel with timeout
+      // Fetch from all tables in parallel - use Promise.allSettled to handle failures gracefully
       const fetchPromises = [
         this.fetchPosts(limit),
         this.fetchMusicPosts(limit),
@@ -87,11 +87,10 @@ export class UnifiedFeedService {
         this.fetchReservationBusinesses(limit)
       ];
       
-      // Add overall timeout to prevent hanging
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Feed fetch timeout - database may not be set up')), 8000);
-      });
+      // Use allSettled to continue even if some fetches fail
+      const results = await Promise.allSettled(fetchPromises);
       
+      // Extract successful results
       const [
         posts,
         musicPosts,
@@ -104,10 +103,9 @@ export class UnifiedFeedService {
         fundraisers,
         auctionLots,
         reservationBusinesses
-      ] = await Promise.race([
-        Promise.all(fetchPromises),
-        timeoutPromise
-      ]) as any;
+      ] = results.map(result => 
+        result.status === 'fulfilled' ? result.value : []
+      );
 
       // Combine all content
       allContent.push(...posts, ...musicPosts, ...videoPosts, ...documentPosts, ...events, ...listings, ...rentals, ...auctions, ...fundraisers, ...auctionLots, ...reservationBusinesses);

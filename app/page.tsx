@@ -38,9 +38,6 @@ export default function Home() {
   
   // Load content from database using unified feed service
   const loadContent = useCallback(async () => {
-    // Don't reload if already loading
-    if (loading && content.length > 0) return
-    
     setLoading(true)
     setError(null)
     
@@ -60,20 +57,17 @@ export default function Home() {
     } catch (error) {
       console.error('❌ Error loading feed:', error)
       setError('Unable to load content. Please check your connection and try again.')
-      // Don't clear existing content on error
-      if (content.length === 0) {
-        setContent([])
-      }
+      // Keep existing content on error for better UX
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearch, debouncedLocation, priceRange, selectedTags, content.length, loading])
+  }, [debouncedSearch, debouncedLocation, priceRange.min, priceRange.max, selectedTags])
 
   // Load content when component mounts or filters change
   // Using debounced values prevents excessive reloading
   useEffect(() => {
     loadContent()
-  }, [debouncedSearch, debouncedLocation, priceRange.min, priceRange.max, selectedTags])
+  }, [loadContent])
 
   // Convert UnifiedFeedItem to Listing interface for ListingGrid compatibility
   const displayListings = content.map(item => ({

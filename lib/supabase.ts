@@ -24,18 +24,17 @@ export const supabase = isSupabaseConfigured()
         },
         // Add fetch options for better timeout handling
         fetch: (url, options = {}) => {
-          // Shorter timeout in development for faster feedback
-          const timeout = process.env.NODE_ENV === 'development' ? 5000 : 30000;
+          // Reasonable timeout - not too short
+          const timeout = 15000; // 15 seconds for all requests
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), timeout);
+          
           return fetch(url, {
             ...options,
-            signal: AbortSignal.timeout(timeout)
-          }).catch(error => {
-            if (error.name === 'TimeoutError' || error.name === 'AbortError') {
-              console.warn('⏱️ Supabase request timed out - might need to set up database tables');
-            } else {
-              console.error('Supabase request failed:', error);
-            }
-            throw error;
+            signal: controller.signal
+          }).finally(() => {
+            clearTimeout(timeoutId);
           });
         }
       },
