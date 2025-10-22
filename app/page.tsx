@@ -37,27 +37,66 @@ export default function Home() {
   const debouncedSearch = useDebounce(searchTerm, 500)
   const debouncedLocation = useDebounce(location, 500)
   
-  // Load content from database using unified feed service
+  // Load content from database - SIMPLIFIED DIRECT QUERY
   const loadContent = useCallback(async () => {
     setLoading(true)
     setError(null)
     
     try {
-      // Clear cache on explicit reload (helps with refresh)
-      if (window.performance?.navigation?.type === 1) {
-        UnifiedFeedService.clearCache();
-        console.log('🔄 Page refreshed - clearing cache');
+      console.log('🔄 Loading posts directly from database...')
+      
+      // Direct query to posts table - bypass all the complex service logic
+      const { supabase } = await import('@/lib/supabase')
+      const { data: postsData, error: postsError } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles!posts_user_id_fkey (
+            id,
+            name,
+            username,
+            avatar_url
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      
+      console.log('📊 Direct Query Result:', postsData?.length || 0, 'posts')
+      console.log('📊 Error:', postsError)
+      console.log('📋 Posts data:', postsData)
+      
+      if (postsError) {
+        console.error('Query error:', postsError)
+        setError('Error loading posts: ' + postsError.message)
+        setContent([])
+        setLoading(false)
+        return
       }
       
-      // Use the new unified feed service (with caching)
-      const results = await UnifiedFeedService.getUnifiedFeed({
-        query: debouncedSearch || undefined,
-        location: debouncedLocation || undefined,
-        priceMin: priceRange.min > 0 ? priceRange.min : undefined,
-        priceMax: priceRange.max < 1000 ? priceRange.max : undefined,
-        tags: selectedTags.length > 0 ? selectedTags : undefined,
-        limit: 50
-      })
+      // Convert to UnifiedFeedItem format
+      const results = (postsData || []).map(post => ({
+        id: post.id,
+        type: 'post' as const,
+        title: post.title || 'Untitled',
+        description: post.content,
+        content: post.content,
+        mediaUrl: post.media_url || post.media_urls?.[0],
+        thumbnailUrl: post.media_url || post.media_urls?.[0],
+        location: post.location,
+        category: post.category,
+        tags: post.tags || [],
+        userId: post.user_id,
+        userProfile: post.profiles ? {
+          name: post.profiles.name,
+          username: post.profiles.username,
+          avatarUrl: post.profiles.avatar_url
+        } : undefined,
+        createdAt: post.created_at,
+        viewCount: 0,
+        likeCount: 0,
+        price: post.price_amount,
+        currency: post.currency
+      }))
       
       console.log('📊 Feed Results:', results.length, 'items')
       console.log('📋 First item:', results[0])
@@ -66,7 +105,7 @@ export default function Home() {
     } catch (error) {
       console.error('❌ Error loading feed:', error)
       setError('Unable to load content. Please check your connection and try again.')
-      // Keep existing content on error for better UX
+      setContent([])
     } finally {
       setLoading(false)
     }
