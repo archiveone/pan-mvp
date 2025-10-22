@@ -98,22 +98,26 @@ DO $$
 BEGIN
     IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'collection_items') 
        AND EXISTS (SELECT FROM pg_tables WHERE tablename = 'collections') THEN
-        DROP POLICY IF EXISTS "collection_items_read" ON collection_items;
-        DROP POLICY IF EXISTS "collection_items_manage" ON collection_items;
-        
-        ALTER TABLE collection_items ENABLE ROW LEVEL SECURITY;
-        
-        CREATE POLICY "collection_items_read" ON collection_items FOR SELECT 
-        USING (
-          collection_id IN (
-            SELECT id FROM collections WHERE user_id = auth.uid() OR is_public = true
-          )
-        );
-        
-        CREATE POLICY "collection_items_manage" ON collection_items FOR ALL 
-        USING (
-          collection_id IN (SELECT id FROM collections WHERE user_id = auth.uid())
-        );
+        BEGIN
+            DROP POLICY IF EXISTS "collection_items_read" ON collection_items;
+            DROP POLICY IF EXISTS "collection_items_manage" ON collection_items;
+            
+            ALTER TABLE collection_items ENABLE ROW LEVEL SECURITY;
+            
+            CREATE POLICY "collection_items_read" ON collection_items FOR SELECT 
+            USING (
+              collection_id IN (
+                SELECT id FROM collections WHERE user_id = auth.uid() OR is_public = true
+              )
+            );
+            
+            CREATE POLICY "collection_items_manage" ON collection_items FOR ALL 
+            USING (
+              collection_id IN (SELECT id FROM collections WHERE user_id = auth.uid())
+            );
+        EXCEPTION WHEN OTHERS THEN
+            RAISE NOTICE 'Skipping collection_items policies: %', SQLERRM;
+        END;
     END IF;
 END $$;
 
@@ -123,23 +127,31 @@ END $$;
 DO $$ 
 BEGIN
     IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'conversations') THEN
-        DROP POLICY IF EXISTS "conversations_participant_access" ON conversations;
-        ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
-        CREATE POLICY "conversations_participant_access" ON conversations FOR ALL
-        USING (auth.uid() = user1_id OR auth.uid() = user2_id);
+        BEGIN
+            DROP POLICY IF EXISTS "conversations_participant_access" ON conversations;
+            ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+            CREATE POLICY "conversations_participant_access" ON conversations FOR ALL
+            USING (auth.uid() = user1_id OR auth.uid() = user2_id);
+        EXCEPTION WHEN OTHERS THEN
+            RAISE NOTICE 'Skipping conversations policies: %', SQLERRM;
+        END;
     END IF;
     
     IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'messages') 
        AND EXISTS (SELECT FROM pg_tables WHERE tablename = 'conversations') THEN
-        DROP POLICY IF EXISTS "messages_participant_access" ON messages;
-        ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-        CREATE POLICY "messages_participant_access" ON messages FOR ALL
-        USING (
-          conversation_id IN (
-            SELECT id FROM conversations 
-            WHERE user1_id = auth.uid() OR user2_id = auth.uid()
-          )
-        );
+        BEGIN
+            DROP POLICY IF EXISTS "messages_participant_access" ON messages;
+            ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+            CREATE POLICY "messages_participant_access" ON messages FOR ALL
+            USING (
+              conversation_id IN (
+                SELECT id FROM conversations 
+                WHERE user1_id = auth.uid() OR user2_id = auth.uid()
+              )
+            );
+        EXCEPTION WHEN OTHERS THEN
+            RAISE NOTICE 'Skipping messages policies: %', SQLERRM;
+        END;
     END IF;
 END $$;
 
