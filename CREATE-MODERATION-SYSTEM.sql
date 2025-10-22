@@ -112,8 +112,8 @@ CREATE INDEX IF NOT EXISTS idx_user_actions_expires ON user_actions(expires_at);
 -- 4. AUTO-MODERATION QUEUE
 -- =====================================================
 
--- Drop view if it exists, create as table
-DROP VIEW IF EXISTS moderation_queue CASCADE;
+-- Drop existing moderation_queue (could be table or view)
+DROP TABLE IF EXISTS moderation_queue CASCADE;
 
 CREATE TABLE IF NOT EXISTS moderation_queue (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
