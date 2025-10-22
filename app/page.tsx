@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import AppHeader from '@/components/AppHeader'
 import AppFooter from '@/components/AppFooter'
 import BottomNav from '@/components/BottomNav'
@@ -102,6 +103,17 @@ export default function Home() {
       {/* Header */}
       <AppHeader />
 
+      {/* Database Setup Banner */}
+      {!isSupabaseConfigured() && (
+        <div className="bg-yellow-500 text-black py-3 px-4">
+          <div className="max-w-6xl mx-auto text-center">
+            <p className="text-sm sm:text-base font-medium">
+              ⚠️ <strong>Database not configured.</strong> Please set up your Supabase environment variables to use the app.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Search and Filters (no category tabs) */}
       <SearchAndFilters 
         onSearch={setSearchTerm}
@@ -169,25 +181,43 @@ export default function Home() {
           
           {/* Empty State */}
           {!loading && !error && displayListings.length === 0 && (
-            <div className="text-center py-12 sm:py-16 px-4">
-              <div className="text-gray-500 dark:text-gray-400 text-base sm:text-lg mb-2">No listings found</div>
-              <div className="text-gray-400 dark:text-gray-500 text-sm mb-4">
-                Try adjusting your search criteria or browse all categories
+            <div className="text-center py-16 sm:py-24 px-4">
+              <div className="max-w-md mx-auto">
+                <div className="text-6xl mb-6">📭</div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                  {isSupabaseConfigured() ? 'No content yet' : 'Database not set up'}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  {isSupabaseConfigured() 
+                    ? 'Be the first to create content! Start by creating a post, listing, or event.'
+                    : 'Configure your database to start using the app. Check the console for setup instructions.'
+                  }
+                </p>
+                {isSupabaseConfigured() && (
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button
+                      onClick={() => window.location.href = '/create'}
+                      className="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium"
+                    >
+                      Create Content
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSearchTerm('')
+                        setLocation('')
+                        setDate('')
+                        setPriceRange({ min: 0, max: 1000 })
+                        setAvailability('all')
+                        setSortBy('trending')
+                        setSelectedTags([])
+                      }}
+                      className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
+                )}
               </div>
-              <button
-                onClick={() => {
-                  setSearchTerm('')
-                  setLocation('')
-                  setDate('')
-                  setPriceRange({ min: 0, max: 1000 })
-                  setAvailability('all')
-                  setSortBy('trending')
-                  setSelectedTags([])
-                }}
-                className="px-6 py-3 bg-black dark:bg-gray-700 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors text-sm sm:text-base"
-              >
-                Clear Filters
-              </button>
             </div>
           )}
         </div>

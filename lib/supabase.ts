@@ -1,41 +1,58 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'implicit', // Use implicit flow for better compatibility
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined
-  },
-  global: {
-    headers: {
-      'x-application-name': 'pan-marketplace'
-    },
-    // Add fetch options for better timeout handling
-    fetch: (url, options = {}) => {
-      return fetch(url, {
-        ...options,
-        // Set reasonable timeout (30 seconds)
-        signal: AbortSignal.timeout(30000)
-      }).catch(error => {
-        console.error('Supabase request failed:', error);
-        throw error;
-      });
-    }
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
-  }
-})
+// Check if Supabase is configured
+export const isSupabaseConfigured = () => {
+  return Boolean(supabaseUrl && supabaseAnonKey && supabaseUrl.includes('supabase.co'))
+}
+
+// Create a safe client that handles missing credentials
+export const supabase = isSupabaseConfigured() 
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        flowType: 'implicit', // Use implicit flow for better compatibility
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined
+      },
+      global: {
+        headers: {
+          'x-application-name': 'pan-marketplace'
+        },
+        // Add fetch options for better timeout handling
+        fetch: (url, options = {}) => {
+          // Shorter timeout in development for faster feedback
+          const timeout = process.env.NODE_ENV === 'development' ? 5000 : 30000;
+          return fetch(url, {
+            ...options,
+            signal: AbortSignal.timeout(timeout)
+          }).catch(error => {
+            if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+              console.warn('⏱️ Supabase request timed out - might need to set up database tables');
+            } else {
+              console.error('Supabase request failed:', error);
+            }
+            throw error;
+          });
+        }
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        }
+      }
+    })
+  : null as any // Return null if not configured (will be handled by services)
 
 // Connection health check
 export const checkConnection = async (): Promise<boolean> => {
+  if (!isSupabaseConfigured()) {
+    return false; // No connection in demo mode
+  }
+  
   try {
     const { error } = await supabase.from('profiles').select('id').limit(1)
     return !error

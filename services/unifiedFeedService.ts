@@ -1,4 +1,5 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { DemoDataService } from './demoDataService';
 
 // Simple in-memory cache with TTL
 interface CacheEntry {
@@ -52,6 +53,12 @@ export class UnifiedFeedService {
   }): Promise<UnifiedFeedItem[]> {
     const limit = filters?.limit || 50;
     
+    // If Supabase is not configured, return empty
+    if (!isSupabaseConfigured()) {
+      console.warn('⚠️ Supabase not configured. Please set up environment variables.');
+      return [];
+    }
+    
     // Generate cache key
     const cacheKey = JSON.stringify(filters || {});
     
@@ -65,7 +72,26 @@ export class UnifiedFeedService {
     const allContent: UnifiedFeedItem[] = [];
 
     try {
-      // Fetch from all tables in parallel
+      // Fetch from all tables in parallel with timeout
+      const fetchPromises = [
+        this.fetchPosts(limit),
+        this.fetchMusicPosts(limit),
+        this.fetchVideoPosts(limit),
+        this.fetchDocumentPosts(limit),
+        this.fetchEvents(limit),
+        this.fetchListings(limit),
+        this.fetchBookableListings(limit),
+        this.fetchAuctions(limit),
+        this.fetchFundraisers(limit),
+        this.fetchAuctionLots(limit),
+        this.fetchReservationBusinesses(limit)
+      ];
+      
+      // Add overall timeout to prevent hanging
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Feed fetch timeout - database may not be set up')), 8000);
+      });
+      
       const [
         posts,
         musicPosts,
@@ -78,19 +104,10 @@ export class UnifiedFeedService {
         fundraisers,
         auctionLots,
         reservationBusinesses
-      ] = await Promise.all([
-        this.fetchPosts(limit),
-        this.fetchMusicPosts(limit),
-        this.fetchVideoPosts(limit),
-        this.fetchDocumentPosts(limit),
-        this.fetchEvents(limit),
-        this.fetchListings(limit),
-        this.fetchBookableListings(limit),
-        this.fetchAuctions(limit),
-        this.fetchFundraisers(limit),
-        this.fetchAuctionLots(limit),
-        this.fetchReservationBusinesses(limit)
-      ]);
+      ] = await Promise.race([
+        Promise.all(fetchPromises),
+        timeoutPromise
+      ]) as any;
 
       // Combine all content
       allContent.push(...posts, ...musicPosts, ...videoPosts, ...documentPosts, ...events, ...listings, ...rentals, ...auctions, ...fundraisers, ...auctionLots, ...reservationBusinesses);
@@ -163,8 +180,14 @@ export class UnifiedFeedService {
       
       console.log('✅ Fresh feed data fetched and cached');
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching unified feed:', error);
+      
+      // If timeout or database not set up, show helpful message
+      if (error.message?.includes('timeout') || error.message?.includes('database')) {
+        console.warn('⚠️ Database tables may not be set up yet.');
+        console.warn('💡 Run database migrations to enable content: See supabase/migrations/');
+      }
       
       // Return cached data if available, even if expired
       const cached = cache.get(cacheKey);
@@ -173,6 +196,7 @@ export class UnifiedFeedService {
         return cached.data;
       }
       
+      // Return empty array - no demo data fallback
       return [];
     }
   }

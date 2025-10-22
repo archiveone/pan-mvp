@@ -41,14 +41,6 @@ const nextConfig = {
   
   // Add timeout configurations
   staticPageGenerationTimeout: 60,
-  
-  // Development mode optimizations
-  ...(process.env.NODE_ENV === 'development' && {
-    devIndicators: {
-      buildActivity: true,
-      buildActivityPosition: 'bottom-right',
-    },
-  }),
 
   // Security headers
   async headers() {
@@ -92,7 +84,7 @@ const nextConfig = {
               style-src 'self' 'unsafe-inline';
               img-src 'self' data: https: blob:;
               font-src 'self' data:;
-              connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.paypal.com;
+              connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.paypal.com blob:;
               media-src 'self' https://*.supabase.co blob:;
               frame-src https://js.stripe.com https://www.paypal.com;
               object-src 'none';

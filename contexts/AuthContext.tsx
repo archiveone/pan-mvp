@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User as SupabaseUser } from '@supabase/supabase-js'
-import { supabase, Profile } from '@/lib/supabase'
+import { supabase, Profile, isSupabaseConfigured } from '@/lib/supabase'
 import { signOut as authServiceSignOut } from '@/services/authService'
 
 interface AuthContextType {
@@ -25,15 +25,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // If Supabase is not configured, skip auth
+    if (!isSupabaseConfigured()) {
+      console.log('🎨 Demo mode - Authentication disabled');
+      setLoading(false);
+      return;
+    }
+    
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        await fetchProfile(session.user.id)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        setUser(session?.user ?? null)
+        
+        if (session?.user) {
+          await fetchProfile(session.user.id)
+        }
+      } catch (error) {
+        console.warn('Auth session check failed:', error);
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     getInitialSession()
@@ -137,6 +149,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
   const signUp = async (email: string, password: string, fullName?: string) => {
+    if (!isSupabaseConfigured()) {
+      return { error: { message: 'Authentication is not available in demo mode. Please configure Supabase credentials.' } };
+    }
+    
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -191,6 +207,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured()) {
+      return { error: { message: 'Authentication is not available in demo mode. Please configure Supabase credentials.' } };
+    }
+    
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -203,6 +223,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
   const signInWithMagicLink = async (email: string) => {
+    if (!isSupabaseConfigured()) {
+      return { error: { message: 'Authentication is not available in demo mode. Please configure Supabase credentials.' } };
+    }
+    
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -217,13 +241,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
   const signOut = async () => {
-    const result = await authServiceSignOut()
-    if (!result.success) {
-      console.error('Sign out error:', result.error)
+    if (isSupabaseConfigured()) {
+      const result = await authServiceSignOut()
+      if (!result.success) {
+        console.error('Sign out error:', result.error)
+      }
     }
+    // Reset local state
+    setUser(null);
+    setProfile(null);
   }
 
   const updateProfile = async (profileData: Partial<Profile>) => {
+    if (!isSupabaseConfigured()) {
+      return { error: { message: 'Profile updates are not available in demo mode.' } };
+    }
+    
     if (!user) {
       return { error: new Error('No user logged in') }
     }
