@@ -300,7 +300,16 @@ WITH CHECK (auth.uid() = buyer_id);
 -- View: Available music
 CREATE OR REPLACE VIEW marketplace_music AS
 SELECT 
-  p.*,
+  p.id,
+  p.title,
+  p.content,
+  p.media_url,
+  p.user_id,
+  p.price_amount,
+  p.currency,
+  p.post_type,
+  p.metadata,
+  p.created_at,
   pr.name as seller_name,
   pr.username as seller_username,
   p.metadata->>'artist' as artist,
@@ -308,37 +317,58 @@ SELECT
   p.metadata->>'duration' as duration
 FROM posts p
 JOIN profiles pr ON p.user_id = pr.id
-WHERE p.is_for_sale = true 
-  AND p.post_type IN ('music_single', 'music_album')
-  AND p.is_published = true;
+WHERE COALESCE(p.is_for_sale, false) = true 
+  AND COALESCE(p.post_type, 'post') IN ('music_single', 'music_album')
+  AND COALESCE(p.is_published, true) = true;
 
 -- View: Available videos
 CREATE OR REPLACE VIEW marketplace_videos AS
 SELECT 
-  p.*,
+  p.id,
+  p.title,
+  p.content,
+  p.media_url,
+  p.user_id,
+  p.price_amount,
+  p.currency,
+  p.post_type,
+  p.metadata,
+  p.created_at,
   pr.name as seller_name,
+  pr.username as seller_username,
   p.metadata->>'director' as director,
   p.metadata->>'genre' as genre,
   p.metadata->>'duration' as duration
 FROM posts p
 JOIN profiles pr ON p.user_id = pr.id
-WHERE p.is_for_sale = true 
-  AND p.post_type = 'video'
-  AND p.is_published = true;
+WHERE COALESCE(p.is_for_sale, false) = true 
+  AND COALESCE(p.post_type, 'post') = 'video'
+  AND COALESCE(p.is_published, true) = true;
 
 -- View: Available events
 CREATE OR REPLACE VIEW marketplace_events AS
 SELECT 
-  p.*,
+  p.id,
+  p.title,
+  p.content,
+  p.media_url,
+  p.location,
+  p.user_id,
+  p.price_amount,
+  p.currency,
+  p.post_type,
+  p.metadata,
+  p.created_at,
   pr.name as organizer_name,
+  pr.username as organizer_username,
   p.metadata->>'event_date' as event_date,
   p.metadata->>'venue' as venue,
-  p.metadata->'tickets_remaining' as tickets_remaining
+  p.metadata->>'tickets_remaining' as tickets_remaining
 FROM posts p
 JOIN profiles pr ON p.user_id = pr.id
-WHERE p.is_for_sale = true 
-  AND p.post_type = 'event'
-  AND p.is_published = true
+WHERE COALESCE(p.is_for_sale, false) = true 
+  AND COALESCE(p.post_type, 'post') = 'event'
+  AND COALESCE(p.is_published, true) = true
   AND (p.metadata->>'event_date')::timestamptz > NOW();
 
 -- =====================================================
