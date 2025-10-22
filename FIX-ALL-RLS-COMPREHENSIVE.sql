@@ -10,6 +10,10 @@ DROP POLICY IF EXISTS "allow_public_read_posts" ON posts;
 DROP POLICY IF EXISTS "allow_authenticated_insert_own_posts" ON posts;
 DROP POLICY IF EXISTS "allow_authenticated_update_own_posts" ON posts;
 DROP POLICY IF EXISTS "allow_authenticated_delete_own_posts" ON posts;
+DROP POLICY IF EXISTS "posts_read_all" ON posts;
+DROP POLICY IF EXISTS "posts_insert_own" ON posts;
+DROP POLICY IF EXISTS "posts_update_own" ON posts;
+DROP POLICY IF EXISTS "posts_delete_own" ON posts;
 
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 
@@ -21,9 +25,14 @@ CREATE POLICY "posts_delete_own" ON posts FOR DELETE USING (auth.uid() = user_id
 -- =====================================================
 -- PROFILES - Public read, authenticated update own
 -- =====================================================
-DROP POLICY IF EXISTS "profiles_read_all" ON profiles;
-DROP POLICY IF EXISTS "profiles_insert_own" ON profiles;
-DROP POLICY IF EXISTS "profiles_update_own" ON profiles;
+DO $$ 
+DECLARE 
+    r RECORD;
+BEGIN
+    FOR r IN (SELECT policyname FROM pg_policies WHERE tablename = 'profiles') LOOP
+        EXECUTE 'DROP POLICY IF EXISTS ' || quote_ident(r.policyname) || ' ON profiles';
+    END LOOP;
+END $$;
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
@@ -34,10 +43,14 @@ CREATE POLICY "profiles_update_own" ON profiles FOR UPDATE USING (auth.uid() = i
 -- =====================================================
 -- HUB BOXES - Own or public
 -- =====================================================
-DROP POLICY IF EXISTS "hub_boxes_read_own_or_public" ON hub_boxes;
-DROP POLICY IF EXISTS "hub_boxes_insert_own" ON hub_boxes;
-DROP POLICY IF EXISTS "hub_boxes_update_own" ON hub_boxes;
-DROP POLICY IF EXISTS "hub_boxes_delete_own" ON hub_boxes;
+DO $$ 
+DECLARE 
+    r RECORD;
+BEGIN
+    FOR r IN (SELECT policyname FROM pg_policies WHERE tablename = 'hub_boxes') LOOP
+        EXECUTE 'DROP POLICY IF EXISTS ' || quote_ident(r.policyname) || ' ON hub_boxes';
+    END LOOP;
+END $$;
 
 ALTER TABLE hub_boxes ENABLE ROW LEVEL SECURITY;
 
