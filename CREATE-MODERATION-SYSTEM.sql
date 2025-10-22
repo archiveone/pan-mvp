@@ -139,6 +139,25 @@ CREATE INDEX IF NOT EXISTS idx_moderation_queue_status ON moderation_queue(statu
 CREATE INDEX IF NOT EXISTS idx_moderation_queue_created ON moderation_queue(created_at DESC);
 
 -- =====================================================
+-- ADD MODERATION FIELDS TO EXISTING TABLES FIRST
+-- =====================================================
+
+-- Add moderation fields to posts
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_flagged BOOLEAN DEFAULT false;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderation_status VARCHAR(20) DEFAULT 'approved';
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS safety_checked BOOLEAN DEFAULT false;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_safety_approved BOOLEAN DEFAULT true;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderation_notes TEXT;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderated_by UUID REFERENCES profiles(id) ON DELETE SET NULL;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderated_at TIMESTAMP WITH TIME ZONE;
+
+CREATE INDEX IF NOT EXISTS idx_posts_flagged ON posts(is_flagged) WHERE is_flagged = true;
+
+-- Add admin/moderator flags to profiles
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_moderator BOOLEAN DEFAULT false;
+
+-- =====================================================
 -- FUNCTIONS
 -- =====================================================
 
@@ -282,24 +301,6 @@ CREATE POLICY "moderation_queue_admin_only" ON moderation_queue
 FOR ALL USING (
   auth.uid() IN (SELECT id FROM profiles WHERE is_admin = true)
 );
-
--- =====================================================
--- ADD MODERATION FIELDS TO POSTS
--- =====================================================
-ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_flagged BOOLEAN DEFAULT false;
-ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderation_status VARCHAR(20) DEFAULT 'approved';
-ALTER TABLE posts ADD COLUMN IF NOT EXISTS safety_checked BOOLEAN DEFAULT false;
-ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_safety_approved BOOLEAN DEFAULT true;
-ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderation_notes TEXT;
-ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderated_by UUID REFERENCES profiles(id) ON DELETE SET NULL;
-ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderated_at TIMESTAMP WITH TIME ZONE;
-
-CREATE INDEX IF NOT EXISTS idx_posts_flagged ON posts(is_flagged) WHERE is_flagged = true;
-CREATE INDEX IF NOT EXISTS idx_posts_moderation_status ON posts(moderation_status);
-
--- Add admin flag to profiles
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_moderator BOOLEAN DEFAULT false;
 
 -- =====================================================
 -- TRIGGER: Auto-create trust score for new users
