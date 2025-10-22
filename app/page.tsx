@@ -43,9 +43,7 @@ export default function Home() {
     setError(null)
     
     try {
-      console.log('🔄 Loading posts directly from database...')
-      
-      // Direct query to posts table - bypass all the complex service logic
+      // Direct query to posts table
       const { supabase } = await import('@/lib/supabase')
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
@@ -60,10 +58,6 @@ export default function Home() {
         `)
         .order('created_at', { ascending: false })
         .limit(50)
-      
-      console.log('📊 Direct Query Result:', postsData?.length || 0, 'posts')
-      console.log('📊 Error:', postsError)
-      console.log('📋 Posts data:', postsData)
       
       if (postsError) {
         console.error('Query error:', postsError)
@@ -98,8 +92,6 @@ export default function Home() {
         currency: post.currency
       }))
       
-      console.log('📊 Feed Results:', results.length, 'items')
-      console.log('📋 First item:', results[0])
       setContent(results)
       setError(null)
     } catch (error) {
@@ -112,15 +104,12 @@ export default function Home() {
   }, [debouncedSearch, debouncedLocation, priceRange.min, priceRange.max, selectedTags])
 
   // Load content when component mounts or filters change
-  // Using debounced values prevents excessive reloading
   useEffect(() => {
-    console.log('🔄 useEffect triggered, calling loadContent')
     loadContent()
   }, [debouncedSearch, debouncedLocation, priceRange.min, priceRange.max, selectedTags])
   
   // Clear cache on mount to ensure fresh data
   useEffect(() => {
-    console.log('🔄 Component mounted, clearing cache')
     UnifiedFeedService.clearCache()
   }, [])
 
@@ -147,16 +136,6 @@ export default function Home() {
     content_type: item.type // Use the unified type
   }))
   
-  // Debug logging
-  console.log('📊 Content items:', content.length)
-  console.log('📊 Display listings:', displayListings.length)
-  console.log('📊 Loading state:', loading)
-  console.log('📊 Error state:', error)
-  if (displayListings.length > 0) {
-    console.log('📋 First display listing:', displayListings[0])
-  } else {
-    console.log('⚠️ No display listings to show!')
-  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -237,10 +216,7 @@ export default function Home() {
           )}
 
           {/* Listings Grid */}
-          <div>
-            <p className="text-sm text-gray-500 mb-2">Debug: {displayListings.length} listings to display, loading: {loading.toString()}</p>
-            <ListingGrid listings={displayListings} loading={loading} />
-          </div>
+          <ListingGrid listings={displayListings} loading={loading} />
           
           {/* Empty State */}
           {!loading && !error && displayListings.length === 0 && (
