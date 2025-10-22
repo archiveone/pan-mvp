@@ -5,6 +5,7 @@ import { useSavedPosts } from '../hooks/useSavedListings';
 // import BookingInterface from './BookingInterface'; // Removed - not needed
 import PaymentModal from './PaymentModal';
 import SaveToFolderButton from './SaveToFolderButton';
+import PurchaseButton from './PurchaseButton';
 
 interface Listing {
   id: string
@@ -117,8 +118,24 @@ const ListingCard: React.FC<{ listing: Listing }> = ({ listing }) => {
 
       {/* Action buttons */}
       <div className="absolute bottom-3 left-3 right-3 flex space-x-2">
-        {/* Book/Reserve button for booking-type listings */}
-        {(listing.metadata?.transaction_category === 'bookings_reservations' || 
+        {/* New Purchase Button - handles all purchase types automatically */}
+        {(listing as any).is_for_sale !== undefined && (
+          <div
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            className="flex-1"
+          >
+            <PurchaseButton 
+              post={listing as any} 
+              className="w-full text-sm py-2"
+            />
+          </div>
+        )}
+
+        {/* Fallback buttons for legacy listings */}
+        {!(listing as any).is_for_sale && (listing.metadata?.transaction_category === 'bookings_reservations' || 
           listing.category === 'Services' || 
           listing.category === 'Events') && (
           <button
@@ -134,8 +151,7 @@ const ListingCard: React.FC<{ listing: Listing }> = ({ listing }) => {
           </button>
         )}
 
-        {/* Buy button for purchase-type listings */}
-        {(listing.metadata?.transaction_category === 'purchases_ecommerce' || 
+        {!(listing as any).is_for_sale && (listing.metadata?.transaction_category === 'purchases_ecommerce' || 
           listing.category === 'Art & Crafts' || 
           listing.category === 'Electronics' || 
           listing.category === 'Fashion') && (
