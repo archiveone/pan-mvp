@@ -166,11 +166,11 @@ CREATE TABLE IF NOT EXISTS transactions (
   refunded_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE INDEX idx_transactions_buyer ON transactions(buyer_id);
-CREATE INDEX idx_transactions_seller ON transactions(seller_id);
-CREATE INDEX idx_transactions_post ON transactions(post_id);
-CREATE INDEX idx_transactions_status ON transactions(status);
-CREATE INDEX idx_transactions_type ON transactions(transaction_type);
+CREATE INDEX IF NOT EXISTS idx_transactions_buyer ON transactions(buyer_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_seller ON transactions(seller_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_post ON transactions(post_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_status ON transactions(status);
+CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(transaction_type);
 
 -- =====================================================
 -- TRIGGER: Decrement stock on purchase
@@ -191,6 +191,8 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_decrement_stock ON transactions;
 
 CREATE TRIGGER trigger_decrement_stock
 AFTER UPDATE ON transactions
@@ -279,6 +281,9 @@ $$ LANGUAGE plpgsql;
 -- RLS POLICIES FOR TRANSACTIONS
 -- =====================================================
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "transactions_view_own" ON transactions;
+DROP POLICY IF EXISTS "transactions_create" ON transactions;
 
 CREATE POLICY "transactions_view_own"
 ON transactions FOR SELECT
