@@ -5,6 +5,7 @@ import { ShoppingCart, Download, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { purchasePost, addFreeContentToLibrary, getPurchaseButtonText } from '@/services/purchaseService';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/useToast';
 
 interface PurchaseButtonProps {
   post: any;
@@ -15,6 +16,7 @@ interface PurchaseButtonProps {
 export default function PurchaseButton({ post, className = '', onSuccess }: PurchaseButtonProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [purchased, setPurchased] = useState(false);
 
@@ -37,7 +39,7 @@ export default function PurchaseButton({ post, className = '', onSuccess }: Purc
         onSuccess?.();
         
         // Show success message
-        alert('Added to your library!');
+        toast.success('Added to your library!');
       } else {
         // Paid content - go through Stripe
         const result = await purchasePost({
@@ -54,7 +56,7 @@ export default function PurchaseButton({ post, className = '', onSuccess }: Purc
         onSuccess?.();
 
         // Show success and redirect to library
-        alert('Purchase successful! Check your library.');
+        toast.success('Purchase successful! Check your library.');
         
         // Redirect based on type
         const redirectPath = {
@@ -67,11 +69,14 @@ export default function PurchaseButton({ post, className = '', onSuccess }: Purc
       }
     } catch (error) {
       console.error('Purchase failed:', error);
-      alert('Purchase failed. Please try again.');
+      toast.error('Purchase failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  // Render toast container
+  const ToastContainer = toast.ToastContainer;
 
   if (purchased) {
     return (
@@ -86,18 +91,21 @@ export default function PurchaseButton({ post, className = '', onSuccess }: Purc
   }
 
   return (
-    <button
-      onClick={handlePurchase}
-      disabled={loading}
-      className={`flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 ${className}`}
-    >
-      {isFree ? (
-        <Download className="w-5 h-5" />
-      ) : (
-        <ShoppingCart className="w-5 h-5" />
-      )}
-      <span>{loading ? 'Processing...' : buttonText}</span>
-    </button>
+    <>
+      <button
+        onClick={handlePurchase}
+        disabled={loading}
+        className={`flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 ${className}`}
+      >
+        {isFree ? (
+          <Download className="w-5 h-5" />
+        ) : (
+          <ShoppingCart className="w-5 h-5" />
+        )}
+        <span>{loading ? 'Processing...' : buttonText}</span>
+      </button>
+      <ToastContainer />
+    </>
   );
 }
 
