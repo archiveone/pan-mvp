@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS story_views (
 CREATE INDEX IF NOT EXISTS idx_stories_user ON stories(user_id);
 CREATE INDEX IF NOT EXISTS idx_stories_expires ON stories(expires_at);
 CREATE INDEX IF NOT EXISTS idx_stories_created ON stories(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_stories_active ON stories(user_id, expires_at) WHERE expires_at > NOW();
+CREATE INDEX IF NOT EXISTS idx_stories_active ON stories(user_id, expires_at);
 
 CREATE INDEX IF NOT EXISTS idx_story_views_story ON story_views(story_id);
 CREATE INDEX IF NOT EXISTS idx_story_views_viewer ON story_views(viewer_id);
