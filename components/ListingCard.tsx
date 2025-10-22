@@ -43,21 +43,31 @@ const ListingCard: React.FC<{ listing: Listing }> = ({ listing }) => {
   // State for booking and payment modals
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  
+  // State for mobile touch interaction
+  const [showInfoOnMobile, setShowInfoOnMobile] = useState(false)
 
   return (
     <>
     <Link 
-      href={`/listing/${listing.id}`} 
-      className="group relative aspect-square overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
+      href={`/listing/${listing.id}`}
+      onClick={(e) => {
+        // On mobile: first tap shows info, second tap opens link
+        if (window.innerWidth < 768 && !showInfoOnMobile) {
+          e.preventDefault();
+          setShowInfoOnMobile(true);
+        }
+      }}
+      className="group relative aspect-square overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 rounded-lg"
     >
       {listing.image_url ? (
         <img 
             src={listing.image_url} 
             alt={listing.title} 
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+            className="w-full h-full object-cover transition-transform duration-300 md:group-hover:scale-105" 
         />
       ) : (
-        <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-4xl">
+        <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400 dark:text-gray-500 text-4xl">
           📷
         </div>
       )}
@@ -81,21 +91,25 @@ const ListingCard: React.FC<{ listing: Listing }> = ({ listing }) => {
         </div>
       )}
       
-      {/* White strip hover effect */}
-      <div className="absolute inset-x-0 bottom-0 bg-white p-3 transform translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-in-out">
+      {/* Info overlay - Shows on hover (desktop) or tap (mobile) */}
+      <div className={`absolute inset-x-0 bottom-0 bg-white dark:bg-gray-800 p-3 transform transition-all duration-300 ease-in-out ${
+        showInfoOnMobile 
+          ? 'translate-y-0 opacity-100' 
+          : 'translate-y-full opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100'
+      }`}>
         <div className="flex justify-between items-start">
             <div className="flex-1">
-                <h3 className="text-gray-800 font-semibold text-base truncate pr-2">{listing.title}</h3>
-                <p className="text-red-600 font-bold text-sm">{priceText}</p>
+                <h3 className="text-gray-800 dark:text-white font-semibold text-base truncate pr-2">{listing.title}</h3>
+                <p className="text-red-600 dark:text-red-400 font-bold text-sm">{priceText}</p>
                 {listing.location && (
                   <div className="flex items-center mt-1">
                     <MapPin size={12} className="text-gray-400 mr-1" />
-                    <p className="text-gray-500 text-xs">{listing.location}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-xs">{listing.location}</p>
                   </div>
                 )}
             </div>
             {TypeIcon && (
-                <div className="text-gray-500 flex-shrink-0">
+                <div className="text-gray-500 dark:text-gray-400 flex-shrink-0">
                     {TypeIcon}
                 </div>
             )}
