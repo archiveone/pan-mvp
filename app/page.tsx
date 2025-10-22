@@ -114,15 +114,14 @@ export default function Home() {
   // Load content when component mounts or filters change
   // Using debounced values prevents excessive reloading
   useEffect(() => {
+    console.log('🔄 useEffect triggered, calling loadContent')
     loadContent()
-  }, [loadContent, refreshKey])
+  }, [debouncedSearch, debouncedLocation, priceRange.min, priceRange.max, selectedTags])
   
   // Clear cache on mount to ensure fresh data
   useEffect(() => {
+    console.log('🔄 Component mounted, clearing cache')
     UnifiedFeedService.clearCache()
-    return () => {
-      // Optional: clear on unmount
-    }
   }, [])
 
   // Convert UnifiedFeedItem to Listing interface for ListingGrid compatibility
@@ -151,8 +150,12 @@ export default function Home() {
   // Debug logging
   console.log('📊 Content items:', content.length)
   console.log('📊 Display listings:', displayListings.length)
+  console.log('📊 Loading state:', loading)
+  console.log('📊 Error state:', error)
   if (displayListings.length > 0) {
     console.log('📋 First display listing:', displayListings[0])
+  } else {
+    console.log('⚠️ No display listings to show!')
   }
 
   return (
@@ -234,7 +237,10 @@ export default function Home() {
           )}
 
           {/* Listings Grid */}
-          <ListingGrid listings={displayListings} loading={loading} />
+          <div>
+            <p className="text-sm text-gray-500 mb-2">Debug: {displayListings.length} listings to display, loading: {loading.toString()}</p>
+            <ListingGrid listings={displayListings} loading={loading} />
+          </div>
           
           {/* Empty State */}
           {!loading && !error && displayListings.length === 0 && (
