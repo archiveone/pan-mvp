@@ -131,7 +131,7 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
     return (
       <div className={`grid ${gridClasses[zoomLevel as keyof typeof gridClasses]} gap-4`}>
         {Array.from({ length: 12 }).map((_, index) => (
-          <div key={index} className="aspect-square bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+          <div key={index} className="aspect-square bg-gray-200 dark:bg-gray-700 animate-pulse rounded-lg"></div>
         ))}
       </div>
     )
