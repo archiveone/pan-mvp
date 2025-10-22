@@ -61,9 +61,9 @@ const AppleStyleBoxEditor: React.FC<AppleStyleBoxEditorProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
       {/* Apple-style minimal modal */}
-      <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-[22px] shadow-2xl w-full max-w-[340px] overflow-hidden">
+      <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-[22px] shadow-2xl w-full max-w-[340px] my-auto max-h-[calc(100vh-1rem)] overflow-hidden">
         {/* Header - Ultra minimal */}
         <div className="px-5 pt-5 pb-3 flex items-center justify-between">
           <h3 className="text-[17px] font-semibold text-gray-900 dark:text-white tracking-tight">

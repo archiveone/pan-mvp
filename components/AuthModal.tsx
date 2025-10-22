@@ -174,8 +174,8 @@ export default function AuthModal({ isOpen, onClose, defaultMode = 'signin' }: A
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-md my-auto max-h-[calc(100vh-1rem)] sm:max-h-[95vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="relative p-6 border-b border-gray-200">
           <button
