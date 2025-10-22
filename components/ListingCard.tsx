@@ -118,8 +118,9 @@ const ListingCard: React.FC<{ listing: Listing }> = ({ listing }) => {
 
       {/* Action buttons */}
       <div className="absolute bottom-3 left-3 right-3 flex space-x-2">
-        {/* New Purchase Button - handles all purchase types automatically */}
-        {(listing as any).is_for_sale !== undefined && (
+        {/* Purchase Button - Only show if item is for sale or free digital content */}
+        {((listing as any).is_for_sale === true || 
+          ((listing as any).is_for_sale === false && (listing as any).is_digital === true)) && (
           <div
             onClick={(e) => {
               e.preventDefault();
