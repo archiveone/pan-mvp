@@ -59,6 +59,8 @@ export default function Home() {
         limit: 50
       })
       
+      console.log('📊 Feed Results:', results.length, 'items')
+      console.log('📋 First item:', results[0])
       setContent(results)
       setError(null)
     } catch (error) {
@@ -106,6 +108,13 @@ export default function Home() {
     is_sold: false,
     content_type: item.type // Use the unified type
   }))
+  
+  // Debug logging
+  console.log('📊 Content items:', content.length)
+  console.log('📊 Display listings:', displayListings.length)
+  if (displayListings.length > 0) {
+    console.log('📋 First display listing:', displayListings[0])
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
