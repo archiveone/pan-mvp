@@ -500,9 +500,9 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ isOpen, onClose, onStoryCre
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 z-[100] flex items-center justify-center">
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-900 z-[100] overflow-y-auto flex items-center justify-center p-2 sm:p-4">
       {/* Animated background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-blue-900/20 animate-pulse" />
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-blue-900/20 animate-pulse pointer-events-none" />
       
       {/* Header - Responsive */}
       <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 flex items-center justify-between z-20 safe-area-inset-top">
@@ -540,7 +540,7 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ isOpen, onClose, onStoryCre
 
       {/* Capture Step */}
       {step === 'capture' && (
-        <div className="w-full h-full flex flex-col items-center justify-center p-4 sm:p-8 relative z-10">
+        <div className="w-full min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative z-10 my-auto">
           {cameraActive ? (
             <div className="relative w-full max-w-md mx-auto animate-in fade-in duration-500">
               {/* Square aspect ratio container - Mobile optimized */}
@@ -644,7 +644,7 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ isOpen, onClose, onStoryCre
 
       {/* Edit Step */}
       {step === 'edit' && mediaPreview && (
-        <div className="relative w-full h-full flex flex-col items-center justify-center p-4 pb-32 sm:pb-40">
+        <div className="relative w-full min-h-screen flex flex-col items-center justify-center p-4 pb-32 sm:pb-40 my-auto">
           {/* Media Preview Container - Square aspect ratio for mobile */}
           <div className="relative w-full max-w-md aspect-square flex items-center justify-center mx-auto">
             <div className="relative w-full h-full flex items-center justify-center rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl bg-black">
