@@ -14,11 +14,21 @@ CREATE TABLE collections (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   
-  -- Collection metadata
+  -- Collection metadata (all customizable!)
   name VARCHAR(200) NOT NULL,
   description TEXT,
   icon VARCHAR(50) DEFAULT '📁',
-  color VARCHAR(7) DEFAULT '#3B82F6',
+  
+  -- Visual customization
+  color VARCHAR(7) DEFAULT '#3B82F6',          -- Accent color
+  background_type VARCHAR(20) DEFAULT 'color', -- 'color', 'gradient', 'image'
+  background_color VARCHAR(7) DEFAULT '#1F2937',
+  background_gradient TEXT,                    -- e.g. 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+  background_image_url TEXT,                   -- URL to uploaded image
+  cover_image_url TEXT,                        -- Hero/cover image
+  
+  -- Style presets
+  theme VARCHAR(50) DEFAULT 'default',         -- 'default', 'minimal', 'vibrant', 'dark', 'light'
   
   -- Collection type
   collection_type VARCHAR(50) NOT NULL,
@@ -125,14 +135,73 @@ CREATE INDEX idx_collection_items_transaction_data ON collection_items USING GIN
 CREATE OR REPLACE FUNCTION create_system_collections_for_user(p_user_id UUID)
 RETURNS VOID AS $$
 BEGIN
-  -- Create system collections
-  INSERT INTO collections (user_id, name, icon, color, collection_type, is_system, position)
+  -- Create system collections with beautiful defaults
+  INSERT INTO collections (
+    user_id, name, description, icon, color, 
+    background_type, background_gradient, 
+    collection_type, is_system, position
+  )
   VALUES 
-    (p_user_id, 'My Tickets', '🎫', '#8B5CF6', 'tickets', true, 0),
-    (p_user_id, 'My Bookings', '🏠', '#10B981', 'bookings', true, 1),
-    (p_user_id, 'My Purchases', '📦', '#F59E0B', 'purchases', true, 2),
-    (p_user_id, 'My Library', '📚', '#3B82F6', 'library', true, 3),
-    (p_user_id, 'Favorites', '❤️', '#EF4444', 'favorites', false, 4)
+    (
+      p_user_id, 
+      'My Tickets', 
+      'Your upcoming events and experiences',
+      '🎫', 
+      '#8B5CF6',
+      'gradient',
+      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      'tickets', 
+      true, 
+      0
+    ),
+    (
+      p_user_id, 
+      'My Bookings', 
+      'Reservations, stays, and appointments',
+      '🏠', 
+      '#10B981',
+      'gradient',
+      'linear-gradient(135deg, #0ba360 0%, #3cba92 100%)',
+      'bookings', 
+      true, 
+      1
+    ),
+    (
+      p_user_id, 
+      'My Purchases', 
+      'Products and orders',
+      '📦', 
+      '#F59E0B',
+      'gradient',
+      'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      'purchases', 
+      true, 
+      2
+    ),
+    (
+      p_user_id, 
+      'My Library', 
+      'Digital content you own',
+      '📚', 
+      '#3B82F6',
+      'gradient',
+      'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      'library', 
+      true, 
+      3
+    ),
+    (
+      p_user_id, 
+      'Favorites', 
+      'Things you love',
+      '❤️', 
+      '#EF4444',
+      'gradient',
+      'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+      'favorites', 
+      false, 
+      4
+    )
   ON CONFLICT (user_id, collection_type, is_system) DO NOTHING;
 END;
 $$ LANGUAGE plpgsql;
