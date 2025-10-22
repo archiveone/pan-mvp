@@ -96,7 +96,8 @@ END $$;
 -- =====================================================
 DO $$ 
 BEGIN
-    IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'collection_items') THEN
+    IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'collection_items') 
+       AND EXISTS (SELECT FROM pg_tables WHERE tablename = 'collections') THEN
         DROP POLICY IF EXISTS "collection_items_read" ON collection_items;
         DROP POLICY IF EXISTS "collection_items_manage" ON collection_items;
         
@@ -128,7 +129,8 @@ BEGIN
         USING (auth.uid() = user1_id OR auth.uid() = user2_id);
     END IF;
     
-    IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'messages') THEN
+    IF EXISTS (SELECT FROM pg_tables WHERE tablename = 'messages') 
+       AND EXISTS (SELECT FROM pg_tables WHERE tablename = 'conversations') THEN
         DROP POLICY IF EXISTS "messages_participant_access" ON messages;
         ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
         CREATE POLICY "messages_participant_access" ON messages FOR ALL
