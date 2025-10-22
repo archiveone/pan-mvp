@@ -6,6 +6,7 @@ import { useSavedPosts } from '../hooks/useSavedListings';
 import PaymentModal from './PaymentModal';
 import SaveToFolderButton from './SaveToFolderButton';
 import PurchaseButton from './PurchaseButton';
+import ReportButton from './ReportButton';
 
 interface Listing {
   id: string
@@ -101,19 +102,28 @@ const ListingCard: React.FC<{ listing: Listing }> = ({ listing }) => {
         </div>
       </div>
       
-      {/* Save to Folder button */}
-      <div 
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        className="absolute top-3 right-3 z-20"
-      >
-        <SaveToFolderButton 
-          itemId={listing.id} 
-          itemType="listing" 
-          compact 
-        />
+      {/* Top right actions */}
+      <div className="absolute top-3 right-3 z-20 flex gap-2">
+        <div 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <SaveToFolderButton 
+            itemId={listing.id} 
+            itemType="listing" 
+            compact 
+          />
+        </div>
+        <div 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <ReportButton postId={listing.id} />
+        </div>
       </div>
 
       {/* Action buttons */}
