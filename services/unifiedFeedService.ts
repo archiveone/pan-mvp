@@ -9,7 +9,7 @@ interface CacheEntry {
 }
 
 const cache = new Map<string, CacheEntry>();
-const CACHE_TTL = 30 * 1000; // 30 seconds
+const CACHE_TTL = 10 * 1000; // 10 seconds (shorter for better freshness)
 
 export interface UnifiedFeedItem {
   id: string;
@@ -62,11 +62,16 @@ export class UnifiedFeedService {
     // Generate cache key
     const cacheKey = JSON.stringify(filters || {});
     
-    // Check cache first
+    // Check cache first - but only use if still fresh
     const cached = cache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-      console.log('📦 Using cached feed data');
+    const now = Date.now();
+    const isCacheFresh = cached && (now - cached.timestamp) < CACHE_TTL;
+    
+    if (isCacheFresh) {
+      console.log('📦 Using cached feed data (fresh)', Math.floor((CACHE_TTL - (now - cached.timestamp)) / 1000), 'seconds left');
       return cached.data;
+    } else if (cached) {
+      console.log('🔄 Cache expired, fetching fresh data...');
     }
     
     const allContent: UnifiedFeedItem[] = [];

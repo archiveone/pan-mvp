@@ -31,6 +31,7 @@ export default function Home() {
   const [content, setContent] = useState<HomepageContent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0) // Force refresh key
   
   // Debounce search inputs to avoid firing on every keystroke
   const debouncedSearch = useDebounce(searchTerm, 500)
@@ -42,6 +43,12 @@ export default function Home() {
     setError(null)
     
     try {
+      // Clear cache on explicit reload (helps with refresh)
+      if (window.performance?.navigation?.type === 1) {
+        UnifiedFeedService.clearCache();
+        console.log('🔄 Page refreshed - clearing cache');
+      }
+      
       // Use the new unified feed service (with caching)
       const results = await UnifiedFeedService.getUnifiedFeed({
         query: debouncedSearch || undefined,
@@ -67,7 +74,15 @@ export default function Home() {
   // Using debounced values prevents excessive reloading
   useEffect(() => {
     loadContent()
-  }, [loadContent])
+  }, [loadContent, refreshKey])
+  
+  // Clear cache on mount to ensure fresh data
+  useEffect(() => {
+    UnifiedFeedService.clearCache()
+    return () => {
+      // Optional: clear on unmount
+    }
+  }, [])
 
   // Convert UnifiedFeedItem to Listing interface for ListingGrid compatibility
   const displayListings = content.map(item => ({
