@@ -48,7 +48,7 @@ export default function CreateButton({
       case 'inline':
         return 'bg-gradient-to-r from-lime-400 to-lime-300 hover:brightness-95 text-black rounded-lg px-4 py-2 transition-all';
       case 'minimal':
-        return 'bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-4 py-2 transition-all';
+        return 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg px-4 py-2 transition-all';
       default:
         return 'bg-gradient-to-r from-lime-400 to-lime-300 hover:brightness-95 text-black rounded-full shadow-lg hover:shadow-xl transition-all';
     }

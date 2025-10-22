@@ -1,101 +1,62 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
 
 interface ToastProps {
-  id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-  title: string;
-  message?: string;
+  message: string;
+  type?: 'success' | 'error' | 'warning' | 'info';
   duration?: number;
-  onClose: (id: string) => void;
+  onClose: () => void;
 }
 
-export function Toast({ id, type, title, message, duration = 5000, onClose }: ToastProps) {
-  const [isVisible, setIsVisible] = useState(false);
-
+export default function Toast({ message, type = 'info', duration = 3000, onClose }: ToastProps) {
   useEffect(() => {
-    setIsVisible(true);
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(() => onClose(id), 300);
-    }, duration);
+    if (duration > 0) {
+      const timer = setTimeout(onClose, duration);
+      return () => clearTimeout(timer);
+    }
+  }, [duration, onClose]);
 
-    return () => clearTimeout(timer);
-  }, [id, duration, onClose]);
-
-  const icons = {
-    success: CheckCircle,
-    error: XCircle,
-    warning: AlertCircle,
-    info: Info,
+  const getIcon = () => {
+    switch (type) {
+      case 'success': return <CheckCircle className="w-5 h-5" />;
+      case 'error': return <XCircle className="w-5 h-5" />;
+      case 'warning': return <AlertCircle className="w-5 h-5" />;
+      default: return <Info className="w-5 h-5" />;
+    }
   };
 
-  const colors = {
-    success: 'bg-green-50 border-green-200 text-green-800',
-    error: 'bg-red-50 border-red-200 text-red-800',
-    warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-    info: 'bg-blue-50 border-blue-200 text-blue-800',
-  };
-
-  const Icon = icons[type];
-
-  const handleClose = () => {
-    setIsVisible(false);
-    setTimeout(() => onClose(id), 300);
+  const getColors = () => {
+    switch (type) {
+      case 'success': return 'bg-green-500 dark:bg-green-600';
+      case 'error': return 'bg-red-500 dark:bg-red-600';
+      case 'warning': return 'bg-orange-500 dark:bg-orange-600';
+      default: return 'bg-blue-500 dark:bg-blue-600';
+    }
   };
 
   return (
-    <div
-      className={`fixed top-4 right-4 z-50 max-w-sm w-full transform transition-all duration-300 ${
-        isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-      }`}
-    >
-      <div className={`rounded-lg border p-4 shadow-lg ${colors[type]}`}>
-        <div className="flex items-start">
-          <Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
-          <div className="ml-3 flex-1">
-            <h4 className="text-sm font-medium">{title}</h4>
-            {message && <p className="mt-1 text-sm opacity-90">{message}</p>}
-          </div>
-          <button
-            onClick={handleClose}
-            className="ml-2 flex-shrink-0 opacity-70 hover:opacity-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] animate-in slide-in-from-bottom duration-300">
+      <div className={`${getColors()} text-white px-6 py-3 rounded-lg shadow-2xl flex items-center gap-3 min-w-[300px] max-w-md`}>
+        {getIcon()}
+        <span className="flex-1 font-medium">{message}</span>
+        <button
+          onClick={onClose}
+          className="p-1 hover:bg-white/20 rounded transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
 }
 
-export function ToastContainer() {
-  const [toasts, setToasts] = useState<ToastProps[]>([]);
-
-  const addToast = (toast: Omit<ToastProps, 'id' | 'onClose'>) => {
-    const id = Date.now().toString();
-    setToasts(prev => [...prev, { ...toast, id, onClose: removeToast }]);
-  };
-
-  const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  };
-
-  useEffect(() => {
-    // Expose addToast globally
-    (window as any).addNotification = addToast;
-    return () => {
-      delete (window as any).addNotification;
-    };
-  }, []);
-
+// Toast Container for managing multiple toasts
+export function ToastContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
-      {toasts.map(toast => (
-        <Toast key={toast.id} {...toast} />
-      ))}
+    <div className="fixed inset-0 pointer-events-none z-[9999] flex flex-col items-center justify-end pb-20 gap-2">
+      {children}
     </div>
   );
 }
