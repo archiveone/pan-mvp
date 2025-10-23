@@ -101,10 +101,10 @@ const SaveToBoxButton: React.FC<SaveToBoxButtonProps> = ({
       {showDropdown && (
         <>
           <div 
-            className="fixed inset-0 z-10" 
+            className="fixed inset-0 z-[9998]" 
             onClick={() => setShowDropdown(false)}
           />
-          <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-20 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[9999] overflow-hidden">
             {/* Header */}
             <div className="p-3 border-b border-gray-100 dark:border-gray-700">
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400">

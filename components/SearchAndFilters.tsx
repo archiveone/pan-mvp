@@ -135,7 +135,7 @@ export default function SearchAndFilters({
             {/* Green Search/Filter Button */}
             <button 
               onClick={() => setShowFilters(!showFilters)}
-              className="m-1 p-2.5 bg-gradient-to-r from-lime-400 to-lime-300 hover:brightness-95 text-black rounded-full transition-all duration-200 active:scale-95 flex-shrink-0"
+              className="m-1 p-2.5 bg-gradient-to-r from-lime-400 to-lime-300 hover:brightness-95 text-black rounded-full transition-all duration-200 active:scale-95 flex-shrink-0 flex items-center justify-center"
               aria-label="Filters"
             >
               <Filter className="w-5 h-5" />

@@ -534,7 +534,7 @@ export default function AdvancedHub() {
           <div className="relative p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row items-start gap-6">
               {/* Profile Image (Avatar) */}
-              <div className="relative group">
+              <div className="relative group mx-auto sm:mx-0">
                 <div className="w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-xl cursor-pointer" onClick={() => isEditingProfile && avatarFileInputRef.current?.click()}>
                   {profileData.avatar ? (
                     <img 
@@ -549,7 +549,8 @@ export default function AdvancedHub() {
                 {isEditingProfile && (
                   <button
                     onClick={() => avatarFileInputRef.current?.click()}
-                    className="absolute -bottom-2 -right-2 bg-blue-500 hover:bg-blue-600 rounded-full p-2 shadow-lg transition-colors"
+                    className="absolute bottom-0 right-0 translate-x-1 translate-y-1 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 rounded-full p-2.5 shadow-lg transition-colors"
+                    title="Change profile picture"
                   >
                     <Camera className="w-4 h-4 text-white" />
                   </button>
@@ -569,7 +570,7 @@ export default function AdvancedHub() {
               </div>
 
               {/* Profile Info */}
-              <div className="flex-1 min-w-0 w-full sm:w-auto">
+              <div className="flex-1 min-w-0 w-full sm:w-auto mt-4 sm:mt-0">
                 {isEditingProfile ? (
                   <div className="space-y-3">
                     <input
@@ -752,12 +753,12 @@ export default function AdvancedHub() {
               return (
                 <div key={box.id} className="relative group h-full">
                   <div
-                    className="h-full rounded-2xl shadow-lg hover:shadow-xl transition-all overflow-hidden cursor-pointer"
+                    className="h-full rounded-2xl shadow-lg sm:hover:shadow-xl transition-all overflow-hidden cursor-pointer"
                     style={bgStyle}
                     onClick={() => handleBoxClick(box)}
                   >
                     {/* Drag Handle */}
-                    <div className="drag-handle absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity cursor-move z-20 p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg">
+                    <div className="drag-handle absolute top-3 left-3 opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-move z-20 p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg">
                       <GripVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     </div>
 
@@ -781,7 +782,7 @@ export default function AdvancedHub() {
                           </div>
                           <button
                             onClick={(e) => handleEditBox(box, e)}
-                            className="absolute -top-1.5 -right-1.5 w-7 h-7 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-105 z-10"
+                            className="absolute -top-1.5 -right-1.5 w-7 h-7 bg-white sm:hover:bg-gray-50 rounded-full flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all shadow-lg sm:hover:scale-105 z-10"
                             title="Edit"
                           >
                             <Edit3 className="w-3.5 h-3.5 text-gray-900" />
