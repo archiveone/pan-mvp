@@ -9,7 +9,7 @@ export type NotificationType =
   | 'group_invite'
   | 'follower_post';
 
-export interface Notification {
+export interface AppNotification {
   id: string;
   user_id: string;
   type: NotificationType;
@@ -33,11 +33,14 @@ export interface Notification {
   };
 }
 
+// Backward compatibility alias
+export type Notification = AppNotification;
+
 export class NotificationService {
   /**
    * Get all notifications for current user
    */
-  static async getUserNotifications(limit = 50): Promise<{ success: boolean; data?: Notification[]; error?: string }> {
+  static async getUserNotifications(limit = 50): Promise<{ success: boolean; data?: AppNotification[]; error?: string }> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -68,7 +71,7 @@ export class NotificationService {
         return { success: false, error: error.message };
       }
 
-      return { success: true, data: data as Notification[] };
+      return { success: true, data: data as AppNotification[] };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch notifications' };
     }
@@ -326,7 +329,7 @@ export class NotificationService {
   /**
    * Subscribe to real-time notifications
    */
-  static subscribeToNotifications(userId: string, callback: (notification: Notification) => void) {
+  static subscribeToNotifications(userId: string, callback: (notification: AppNotification) => void) {
     const subscription = supabase
       .channel('notifications')
       .on(
@@ -338,7 +341,7 @@ export class NotificationService {
           filter: `user_id=eq.${userId}`
         },
         (payload) => {
-          callback(payload.new as Notification);
+          callback(payload.new as AppNotification);
         }
       )
       .subscribe();

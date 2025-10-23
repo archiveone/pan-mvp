@@ -1,13 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia',
-});
+// Function to get Stripe instance (lazy initialization)
+function getStripe() {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  
+  if (!secretKey) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+  
+  return new Stripe(secretKey, {
+    apiVersion: '2024-11-20.acacia',
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
     const { amount, postId, userId, metadata } = await request.json();
+
+    // Get Stripe instance
+    const stripe = getStripe();
 
     // Create Stripe Payment Intent
     const paymentIntent = await stripe.paymentIntents.create({

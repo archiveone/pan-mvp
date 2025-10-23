@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, Check, Heart, MessageCircle, UserPlus, AtSign, Users, FileText } from 'lucide-react';
-import { NotificationService, Notification } from '@/services/notificationService';
+import { NotificationService, AppNotification } from '@/services/notificationService';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
@@ -10,7 +10,7 @@ import { formatDistanceToNow } from 'date-fns';
 const NotificationBell: React.FC = () => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -103,7 +103,7 @@ const NotificationBell: React.FC = () => {
     }
   };
 
-  const getNotificationText = (notification: Notification) => {
+  const getNotificationText = (notification: AppNotification) => {
     const actorName = notification.actor?.name || notification.actor?.username || 'Someone';
     
     switch (notification.type) {
@@ -126,7 +126,7 @@ const NotificationBell: React.FC = () => {
     }
   };
 
-  const getNotificationLink = (notification: Notification) => {
+  const getNotificationLink = (notification: AppNotification) => {
     switch (notification.type) {
       case 'follow':
         return `/profile/${notification.actor_id}`;

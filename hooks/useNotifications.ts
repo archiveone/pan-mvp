@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { NotificationService, Notification, NotificationType } from '@/services/notificationService';
+import { NotificationService, AppNotification, NotificationType } from '@/services/notificationService';
 
 export function useNotifications() {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -127,7 +127,7 @@ export function useNotifications() {
 
     const subscription = NotificationService.subscribeToNotifications(
       user.id,
-      (notification: Notification) => {
+      (notification: AppNotification) => {
         setNotifications(prev => [notification, ...prev]);
         setUnreadCount(prev => prev + 1);
       }

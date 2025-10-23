@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, CheckCheck, Trash2, Filter, MoreVertical } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
-import { Notification } from '@/services/notificationService';
 
 type FilterType = 'all' | 'unread' | 'read';
 type SortType = 'newest' | 'oldest';
