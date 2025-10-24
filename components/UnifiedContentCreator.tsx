@@ -313,21 +313,31 @@ export default function UnifiedContentCreator({ isOpen, onClose, onSuccess }: Un
     setError(null)
 
     try {
-      // Import ImageService for uploads
-      const { ImageService } = await import('@/services/imageService')
+      // Import UploadService for uploads
+      const { UploadService } = await import('@/services/uploadService')
       
       console.log('📤 Uploading images to Supabase Storage...')
       console.log('Total images to upload:', [mainImage, ...additionalMedia].length)
       
-      // Upload images to Supabase Storage FIRST with timeout
+      // Test connection first
+      const connectionTest = await UploadService.testConnection()
+      if (!connectionTest.success) {
+        throw new Error(`Upload connection failed: ${connectionTest.error}`)
+      }
+      
+      // Upload images to Supabase Storage with progress tracking
       const allImages = [mainImage, ...additionalMedia]
       
-      const uploadPromise = ImageService.uploadImages(allImages, 'content-images', 'posts')
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Upload timeout after 60 seconds. Check your internet connection or try smaller images.')), 60000)
+      const uploadResult = await UploadService.uploadFiles(
+        allImages, 
+        user.id, 
+        'content-images', 
+        'posts',
+        (progress) => {
+          console.log(`Upload progress: ${progress.percentage}%`)
+          // You could update UI progress here
+        }
       )
-      
-      const uploadResult = await Promise.race([uploadPromise, timeoutPromise]) as any
       
       console.log('Upload result:', uploadResult)
       

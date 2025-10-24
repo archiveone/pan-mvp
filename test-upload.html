@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pan Upload System Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Supabase Connection</h2>
+        <button onclick="testConnection()">Test Connection</button>
+        <div id="connection-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Storage Buckets</h2>
+        <button onclick="testBuckets()">Check Buckets</button>
+        <div id="buckets-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test File Upload</h2>
+        <input type="file" id="test-file" accept="image/*,video/*,audio/*,.pdf,.txt">
+        <button onclick="testUpload()" id="upload-btn">Upload Test File</button>
+        <div id="upload-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Multiple Files</h2>
+        <input type="file" id="test-files" multiple accept="image/*,video/*,audio/*,.pdf,.txt">
+        <button onclick="testMultipleUpload()" id="multi-upload-btn">Upload Multiple Files</button>
+        <div id="multi-upload-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Log</h2>
+        <div id="log" class="log"></div>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <script>
+        // Import Supabase (you'll need to replace with your actual Supabase URL and key)
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL'
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'
+        
+        // Simple Supabase client
+        const supabase = {
+            storage: {
+                listBuckets: async () => {
+                    const response = await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
+                        headers: {
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'apikey': SUPABASE_ANON_KEY
+                        }
+                    })
+                    return response.json()
+                },
+                from: (bucket) => ({
+                    upload: async (path, file, options) => {
+                        const formData = new FormData()
+                        formData.append('file', file)
+                        
+                        const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                                'apikey': SUPABASE_ANON_KEY
+                            },
+                            body: formData
+                        })
+                        
+                        if (!response.ok) {
+                            const error = await response.text()
+                            return { data: null, error: { message: error } }
+                        }
+                        
+                        const data = await response.json()
+                        return { data: { path }, error: null }
+                    },
+                    getPublicUrl: (path) => ({
+                        data: {
+                            publicUrl: `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`
+                        }
+                    })
+                })
+            }
+        }
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log')
+            const timestamp = new Date().toLocaleTimeString()
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'
+            logDiv.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`
+            logDiv.scrollTop = logDiv.scrollHeight
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = ''
+        }
+
+        async function testConnection() {
+            log('Testing Supabase connection...')
+            try {
+                const { data, error } = await supabase.storage.listBuckets()
+                if (error) {
+                    log(`Connection failed: ${error.message}`, 'error')
+                    document.getElementById('connection-result').innerHTML = 
+                        `<span class="error">❌ Connection failed: ${error.message}</span>`
+                } else {
+                    log(`Connection successful! Found ${data.length} buckets`, 'success')
+                    document.getElementById('connection-result').innerHTML = 
+                        `<span class="success">✅ Connection successful! Found ${data.length} buckets</span>`
+                }
+            } catch (err) {
+                log(`Connection error: ${err.message}`, 'error')
+                document.getElementById('connection-result').innerHTML = 
+                    `<span class="error">❌ Connection error: ${err.message}</span>`
+            }
+        }
+
+        async function testBuckets() {
+            log('Checking storage buckets...')
+            try {
+                const { data, error } = await supabase.storage.listBuckets()
+                if (error) {
+                    log(`Bucket check failed: ${error.message}`, 'error')
+                    document.getElementById('buckets-result').innerHTML = 
+                        `<span class="error">❌ Bucket check failed: ${error.message}</span>`
+                    return
+                }
+
+                const requiredBuckets = ['media', 'content-images', 'content-videos', 'content-audio', 'content-documents']
+                const existingBuckets = data.map(b => b.name)
+                
+                let html = '<h3>Bucket Status:</h3><ul>'
+                requiredBuckets.forEach(bucket => {
+                    const exists = existingBuckets.includes(bucket)
+                    const status = exists ? '✅' : '❌'
+                    const color = exists ? 'success' : 'error'
+                    html += `<li><span class="${color}">${status} ${bucket}</span></li>`
+                    log(`${status} ${bucket}`, exists ? 'success' : 'error')
+                })
+                html += '</ul>'
+
+                const missingBuckets = requiredBuckets.filter(b => !existingBuckets.includes(b))
+                if (missingBuckets.length > 0) {
+                    html += `<p class="error">Missing buckets: ${missingBuckets.join(', ')}</p>`
+                    html += `<p>Go to Supabase Dashboard → Storage → Create these buckets manually</p>`
+                }
+
+                document.getElementById('buckets-result').innerHTML = html
+            } catch (err) {
+                log(`Bucket check error: ${err.message}`, 'error')
+                document.getElementById('buckets-result').innerHTML = 
+                    `<span class="error">❌ Bucket check error: ${err.message}</span>`
+            }
+        }
+
+        async function testUpload() {
+            const fileInput = document.getElementById('test-file')
+            const file = fileInput.files[0]
+            
+            if (!file) {
+                log('Please select a file first', 'error')
+                return
+            }
+
+            log(`Testing upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`)
+            
+            const uploadBtn = document.getElementById('upload-btn')
+            uploadBtn.disabled = true
+            uploadBtn.textContent = 'Uploading...'
+
+            try {
+                const startTime = Date.now()
+                const filePath = `test/${Date.now()}-${file.name}`
+                
+                const { data, error } = await supabase.storage
+                    .from('media')
+                    .upload(filePath, file, {
+                        cacheControl: '3600',
+                        upsert: false
+                    })
+
+                const uploadTime = Date.now() - startTime
+
+                if (error) {
+                    log(`Upload failed: ${error.message}`, 'error')
+                    document.getElementById('upload-result').innerHTML = 
+                        `<span class="error">❌ Upload failed: ${error.message}</span>`
+                } else {
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('media')
+                        .getPublicUrl(filePath)
+                    
+                    log(`Upload successful! Time: ${uploadTime}ms`, 'success')
+                    log(`URL: ${publicUrl}`, 'info')
+                    document.getElementById('upload-result').innerHTML = 
+                        `<span class="success">✅ Upload successful! Time: ${uploadTime}ms</span><br>
+                         <a href="${publicUrl}" target="_blank">View File</a>`
+                }
+            } catch (err) {
+                log(`Upload error: ${err.message}`, 'error')
+                document.getElementById('upload-result').innerHTML = 
+                    `<span class="error">❌ Upload error: ${err.message}</span>`
+            } finally {
+                uploadBtn.disabled = false
+                uploadBtn.textContent = 'Upload Test File'
+            }
+        }
+
+        async function testMultipleUpload() {
+            const fileInput = document.getElementById('test-files')
+            const files = Array.from(fileInput.files)
+            
+            if (files.length === 0) {
+                log('Please select files first', 'error')
+                return
+            }
+
+            log(`Testing multiple upload: ${files.length} files`)
+            
+            const uploadBtn = document.getElementById('multi-upload-btn')
+            uploadBtn.disabled = true
+            uploadBtn.textContent = 'Uploading...'
+
+            try {
+                const startTime = Date.now()
+                const uploadPromises = files.map(async (file, index) => {
+                    const filePath = `test/${Date.now()}-${index}-${file.name}`
+                    return supabase.storage
+                        .from('media')
+                        .upload(filePath, file, {
+                            cacheControl: '3600',
+                            upsert: false
+                        })
+                })
+
+                const results = await Promise.all(uploadPromises)
+                const uploadTime = Date.now() - startTime
+
+                const successful = results.filter(r => !r.error).length
+                const failed = results.filter(r => r.error).length
+
+                log(`Multiple upload complete: ${successful} successful, ${failed} failed. Time: ${uploadTime}ms`, 
+                    failed > 0 ? 'error' : 'success')
+                
+                document.getElementById('multi-upload-result').innerHTML = 
+                    `<span class="${failed > 0 ? 'error' : 'success'}">
+                        ${failed > 0 ? '❌' : '✅'} Multiple upload: ${successful} successful, ${failed} failed. Time: ${uploadTime}ms
+                    </span>`
+
+            } catch (err) {
+                log(`Multiple upload error: ${err.message}`, 'error')
+                document.getElementById('multi-upload-result').innerHTML = 
+                    `<span class="error">❌ Multiple upload error: ${err.message}</span>`
+            } finally {
+                uploadBtn.disabled = false
+                uploadBtn.textContent = 'Upload Multiple Files'
+            }
+        }
+
+        // Initialize
+        log('Upload test page loaded. Please configure your Supabase URL and key at the top of this file.')
+    </script>
+</body>
+</html>
