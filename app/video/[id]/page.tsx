@@ -1,107 +1,144 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import AppHeader from '@/components/AppHeader'
-import AppFooter from '@/components/AppFooter'
-import BottomNav from '@/components/BottomNav'
-import { Play, Pause, Volume2, VolumeX, Maximize, Heart, Share2, Download, Eye, Calendar } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import AdvancedAnalyticsService from '@/services/advancedAnalyticsService'
+import { Play, Pause, Volume2, Heart, Download, Share2, MoreHorizontal, Eye, ThumbsUp, MessageCircle, Clock, User } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+
+interface VideoPost {
+  id: string
+  title: string
+  content: string
+  video_url: string
+  thumbnail_url?: string
+  duration: number
+  resolution?: string
+  view_count: number
+  like_count: number
+  comment_count: number
+  is_premium: boolean
+  premium_price?: number
+  user: {
+    id: string
+    username: string
+    avatar_url?: string
+    full_name?: string
+  }
+  created_at: string
+}
 
 export default function VideoDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const { user } = useAuth()
-  const videoRef = useRef<HTMLVideoElement>(null)
-  
-  const [video, setVideo] = useState<any>(null)
+  const [videoPost, setVideoPost] = useState<VideoPost | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [isMuted, setIsMuted] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
-  const sessionId = useRef(AdvancedAnalyticsService.generateSessionId())
-  const streamStartTime = useRef<number>(0)
+  const [volume, setVolume] = useState(1)
+  const [isLiked, setIsLiked] = useState(false)
+  const [showControls, setShowControls] = useState(true)
 
   useEffect(() => {
-    if (params?.id) {
-      loadVideo()
+    if (params.id) {
+      loadVideoPost(params.id as string)
     }
-  }, [params?.id])
+  }, [params.id])
 
-  const loadVideo = async () => {
-    if (!params?.id) return
-    
+  const loadVideoPost = async (id: string) => {
     try {
+      setLoading(true)
       const { data, error } = await supabase
-        .from('video_posts')
+        .from('posts')
         .select(`
           *,
-          profiles:user_id (
+          profiles!posts_user_id_fkey (
             id,
-            name,
             username,
-            avatar_url
+            avatar_url,
+            full_name
           )
         `)
-        .eq('id', params.id)
+        .eq('id', id)
         .single()
 
       if (error) throw error
-      setVideo(data)
 
-      // Track page view
-      const viewSessionId = AdvancedAnalyticsService.generateSessionId()
-      AdvancedAnalyticsService.trackView({
-        contentId: params.id as string,
-        userId: user?.id,
-        sessionId: viewSessionId,
-        deviceType: typeof navigator !== 'undefined' && /mobile/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
-      })
-
-      // Increment view count
-      await supabase.rpc('increment_video_views', { post_id: params.id })
-    } catch (error) {
-      console.error('Error loading video:', error)
+      if (data) {
+        setVideoPost({
+          id: data.id,
+          title: data.title,
+          content: data.content,
+          video_url: data.video_url,
+          thumbnail_url: data.thumbnail_url,
+          duration: data.duration,
+          resolution: data.resolution,
+          view_count: data.view_count || 0,
+          like_count: data.like_count || 0,
+          comment_count: data.comment_count || 0,
+          is_premium: data.is_premium || false,
+          premium_price: data.premium_price,
+          user: data.profiles,
+          created_at: data.created_at
+        })
+      }
+    } catch (err) {
+      console.error('Error loading video post:', err)
+      setError('Failed to load video post')
     } finally {
       setLoading(false)
     }
   }
 
   const togglePlay = () => {
-    if (!videoRef.current || !params?.id) return
-
-    if (isPlaying) {
-      videoRef.current.pause()
-      // Track stream end
-      const elapsed = Math.floor((Date.now() - streamStartTime.current) / 1000)
-      AdvancedAnalyticsService.updateStream(sessionId.current, elapsed, duration)
-    } else {
-      videoRef.current.play()
-      // Track stream start
-      streamStartTime.current = Date.now()
-      AdvancedAnalyticsService.startStream(
-        params.id as string,
-        user?.id,
-        sessionId.current,
-        duration
-      )
-    }
     setIsPlaying(!isPlaying)
+    // Track view count
+    if (!isPlaying) {
+      incrementViewCount()
+    }
   }
 
-  const toggleMute = () => {
-    if (!videoRef.current) return
-    videoRef.current.muted = !isMuted
-    setIsMuted(!isMuted)
+  const incrementViewCount = async () => {
+    if (!videoPost) return
+    
+    try {
+      await supabase.rpc('increment_view_count', { content_id: videoPost.id })
+      setVideoPost(prev => prev ? { ...prev, view_count: prev.view_count + 1 } : null)
+    } catch (error) {
+      console.error('Error incrementing view count:', error)
+    }
   }
 
-  const toggleFullscreen = () => {
-    if (!videoRef.current) return
-    if (videoRef.current.requestFullscreen) {
-      videoRef.current.requestFullscreen()
+  const toggleLike = async () => {
+    if (!user || !videoPost) return
+    
+    try {
+      if (isLiked) {
+        // Remove like
+        await supabase
+          .from('likes')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', videoPost.id)
+      } else {
+        // Add like
+        await supabase
+          .from('likes')
+          .insert({
+            user_id: user.id,
+            post_id: videoPost.id
+          })
+      }
+      
+      setIsLiked(!isLiked)
+      setVideoPost(prev => prev ? { 
+        ...prev, 
+        like_count: isLiked ? prev.like_count - 1 : prev.like_count + 1 
+      } : null)
+    } catch (error) {
+      console.error('Error toggling like:', error)
     }
   }
 
@@ -111,169 +148,286 @@ export default function VideoDetailPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <Play className="w-12 h-12 text-red-500 animate-pulse mx-auto mb-4" />
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading video...</p>
         </div>
       </div>
     )
   }
 
-  if (!video) {
+  if (error || !videoPost) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-        <p className="text-gray-600 dark:text-gray-400">Video not found</p>
+        <div className="text-center">
+          <div className="text-6xl mb-4">🎬</div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Video Not Found
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            {error || 'This video could not be found.'}
+          </p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      <AppHeader />
-
-      <main className="max-w-6xl mx-auto px-0 sm:px-4 py-0 sm:py-8 pb-24">
-        {/* Video Player */}
-        <div className="relative aspect-video bg-black mb-4 sm:mb-6 sm:rounded-2xl overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      {/* Video Player */}
+      <div className="relative bg-black">
+        <div className="aspect-video relative">
           <video
-            ref={videoRef}
-            src={video.video_url}
-            poster={video.thumbnail_url}
-            className="w-full h-full"
+            src={videoPost.video_url}
+            poster={videoPost.thumbnail_url}
+            className="w-full h-full object-contain"
             onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
             onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
-            onClick={togglePlay}
+            onMouseMove={() => setShowControls(true)}
+            onMouseLeave={() => setShowControls(false)}
+            controls={false}
           />
-
-          {/* Video Controls */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-            {/* Progress Bar */}
-            <input
-              type="range"
-              min="0"
-              max={duration || 0}
-              value={currentTime}
-              onChange={(e) => {
-                const newTime = parseFloat(e.target.value)
-                if (videoRef.current) {
-                  videoRef.current.currentTime = newTime
-                }
-              }}
-              className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer mb-3 accent-red-500"
-            />
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {/* Play/Pause */}
+          
+          {/* Custom Controls Overlay */}
+          <div className={`absolute inset-0 bg-black/20 transition-opacity ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <button
+                onClick={togglePlay}
+                className="w-16 h-16 bg-white/90 hover:bg-white text-black rounded-full flex items-center justify-center transition-all hover:scale-110"
+              >
+                {isPlaying ? <Pause size={32} /> : <Play size={32} />}
+              </button>
+            </div>
+            
+            {/* Bottom Controls */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+              <div className="flex items-center gap-4 text-white">
                 <button
                   onClick={togglePlay}
-                  className="text-white hover:text-red-500 transition-colors"
+                  className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
                 >
-                  {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+                  {isPlaying ? <Pause size={20} /> : <Play size={20} />}
                 </button>
-
-                {/* Volume */}
-                <button
-                  onClick={toggleMute}
-                  className="text-white hover:text-red-500 transition-colors"
-                >
-                  {isMuted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
-                </button>
-
-                {/* Time */}
-                <span className="text-white text-sm">
-                  {formatTime(currentTime)} / {formatTime(duration)}
-                </span>
+                
+                <div className="flex-1">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>{formatTime(currentTime)}</span>
+                    <span>{formatTime(duration)}</span>
+                  </div>
+                  <div className="w-full bg-white/30 rounded-full h-1">
+                    <div 
+                      className="bg-white h-1 rounded-full transition-all"
+                      style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Volume2 size={20} />
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={volume}
+                    onChange={(e) => setVolume(parseFloat(e.target.value))}
+                    className="w-20"
+                  />
+                </div>
               </div>
-
-              {/* Fullscreen */}
-              <button
-                onClick={toggleFullscreen}
-                className="text-white hover:text-red-500 transition-colors"
-              >
-                <Maximize className="w-6 h-6" />
-              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Video Info */}
-        <div className="bg-white dark:bg-gray-900 px-4 sm:px-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-            {video.title}
-          </h1>
-
-          {video.description && (
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              {video.description}
-            </p>
-          )}
-
-          {/* Stats & Actions */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-200 dark:border-gray-800">
-            <div className="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
-              <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                <span>{video.view_count || 0} views</span>
+      {/* Video Info */}
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2">
+            <div className="space-y-4">
+              {/* Title and Stats */}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  {videoPost.title}
+                </h1>
+                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-1">
+                    <Eye size={16} />
+                    <span>{videoPost.view_count.toLocaleString()} views</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock size={16} />
+                    <span>{formatTime(videoPost.duration)}</span>
+                  </div>
+                  {videoPost.resolution && (
+                    <span className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded text-xs">
+                      {videoPost.resolution}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                <span>{new Date(video.created_at).toLocaleDateString()}</span>
+
+              {/* Actions */}
+              <div className="flex items-center justify-between py-4 border-b border-gray-200 dark:border-gray-800">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={toggleLike}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
+                      isLiked 
+                        ? 'text-red-500 bg-red-50 dark:bg-red-900/20' 
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <ThumbsUp size={20} fill={isLiked ? 'currentColor' : 'none'} />
+                    <span>{videoPost.like_count.toLocaleString()}</span>
+                  </button>
+                  
+                  <button className="flex items-center gap-2 px-4 py-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <MessageCircle size={20} />
+                    <span>{videoPost.comment_count.toLocaleString()}</span>
+                  </button>
+                  
+                  <button className="flex items-center gap-2 px-4 py-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <Share2 size={20} />
+                    <span>Share</span>
+                  </button>
+                  
+                  <button className="flex items-center gap-2 px-4 py-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <Download size={20} />
+                    <span>Download</span>
+                  </button>
+                </div>
+                
+                <button className="p-2 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  <MoreHorizontal size={20} />
+                </button>
               </div>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
-                <Heart className="w-4 h-4" />
-                Like
-              </button>
-              <button className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
-                <Share2 className="w-4 h-4" />
-                Share
-              </button>
-              {video.is_downloadable && (
-                <a
-                  href={video.video_url}
-                  download
-                  className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </a>
-              )}
-            </div>
-          </div>
+              {/* Channel Info */}
+              <div className="flex items-center justify-between py-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center overflow-hidden">
+                    {videoPost.user.avatar_url ? (
+                      <img
+                        src={videoPost.user.avatar_url}
+                        alt={videoPost.user.username}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User size={24} className="text-gray-600 dark:text-gray-400" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                      {videoPost.user.full_name || videoPost.user.username}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      @{videoPost.user.username}
+                    </p>
+                  </div>
+                </div>
+                
+                <button className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-medium transition-colors">
+                  Subscribe
+                </button>
+              </div>
 
-          {/* Creator Info */}
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-              {video.profiles?.avatar_url ? (
-                <img src={video.profiles.avatar_url} alt={video.profiles.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  👤
+              {/* Description */}
+              {videoPost.content && (
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {formatDate(videoPost.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                    {videoPost.content}
+                  </p>
                 </div>
               )}
             </div>
-            <div>
-              <p className="font-semibold text-gray-900 dark:text-white">
-                {video.profiles?.name || 'Unknown'}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                @{video.profiles?.username || 'user'}
-              </p>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-4">
+            {/* Related Videos */}
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Related Videos</h3>
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <div className="w-32 h-20 bg-gray-300 dark:bg-gray-600 rounded flex items-center justify-center">
+                    <Play size={16} className="text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
+                      Related Video Title
+                    </h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Channel Name • 1.2K views • 2 days ago
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <div className="w-32 h-20 bg-gray-300 dark:bg-gray-600 rounded flex items-center justify-center">
+                    <Play size={16} className="text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
+                      Another Related Video
+                    </h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Another Channel • 856 views • 1 week ago
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Comments */}
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                Comments ({videoPost.comment_count})
+              </h3>
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                    <User size={16} className="text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        Username
+                      </span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                        2 hours ago
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Great video! Really enjoyed this content.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </main>
-
-      <AppFooter />
-      <BottomNav />
+      </div>
     </div>
   )
 }
-
