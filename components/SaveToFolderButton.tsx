@@ -137,8 +137,16 @@ export default function SaveToFolderButton({ itemId, itemType = 'post', compact 
 
       {/* Modal - Fixed positioning to appear on top */}
       {showModal && (
-        <div className="save-modal" onClick={() => setShowModal(false)}>
-          <div className="save-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div 
+          className="save-modal" 
+          style={{ zIndex: 999999 }}
+          onClick={() => setShowModal(false)}
+        >
+          <div 
+            className="save-modal-content" 
+            style={{ zIndex: 1000000 }}
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div>
