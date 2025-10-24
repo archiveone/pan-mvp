@@ -1,417 +1,434 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'
 
-export interface Analytics {
-  content_id: string;
-  user_id: string;
-  metric_type: 'view' | 'like' | 'save' | 'share' | 'purchase' | 'booking';
-  value: number;
-  metadata?: Record<string, any>;
-  created_at: string;
+export interface AnalyticsEvent {
+  content_id: string
+  user_id?: string
+  event_type: 'view' | 'like' | 'comment' | 'share' | 'download' | 'play' | 'save' | 'click'
+  metadata?: Record<string, any>
+  timestamp?: Date
 }
 
-export interface DemographicData {
-  location?: string;
-  age_range?: string;
-  device_type?: string;
-  referrer?: string;
+export interface ContentAnalytics {
+  content_id: string
+  title: string
+  content_type: string
+  media_type?: string
+  view_count: number
+  like_count: number
+  comment_count: number
+  share_count: number
+  download_count: number
+  play_count: number
+  save_count: number
+  click_count: number
+  engagement_rate: number
+  created_at: string
+  updated_at: string
+}
+
+export interface UserAnalytics {
+  user_id: string
+  total_content: number
+  total_views: number
+  total_likes: number
+  total_comments: number
+  total_shares: number
+  total_downloads: number
+  total_plays: number
+  total_saves: number
+  average_engagement: number
+  top_content: ContentAnalytics[]
+  recent_activity: AnalyticsEvent[]
 }
 
 export class AnalyticsService {
+  
   /**
-   * Track a metric event (view, like, save, etc.)
+   * Track an analytics event
    */
-  static async trackMetric(
-    contentId: string,
-    userId: string,
-    metricType: Analytics['metric_type'],
-    value: number = 1,
-    metadata?: Record<string, any>
-  ) {
+  static async trackEvent(event: AnalyticsEvent): Promise<{
+    success: boolean
+    error?: string
+  }> {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('analytics_events')
         .insert({
-          content_id: contentId,
-          user_id: userId,
-          metric_type: metricType,
-          value,
-          metadata,
-          created_at: new Date().toISOString(),
-        });
+          content_id: event.content_id,
+          user_id: event.user_id,
+          event_type: event.event_type,
+          metadata: event.metadata || {},
+          timestamp: event.timestamp || new Date().toISOString()
+        })
 
-      if (error) throw error;
-      return { success: true, data };
+      if (error) throw error
+
+      // Update content analytics
+      await this.updateContentAnalytics(event.content_id, event.event_type)
+
+      return { success: true }
     } catch (error) {
-      console.error('Error tracking metric:', error);
-      return { success: false, error };
+      console.error('Error tracking analytics event:', error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      }
     }
   }
 
   /**
-   * Track a view
+   * Update content analytics counters
    */
-  static async trackView(contentId: string, userId?: string, demographics?: DemographicData) {
-    return this.trackMetric(contentId, userId || 'anonymous', 'view', 1, demographics);
-  }
-
-  /**
-   * Track a like
-   */
-  static async trackLike(contentId: string, userId: string) {
-    return this.trackMetric(contentId, userId, 'like', 1);
-  }
-
-  /**
-   * Track a save
-   */
-  static async trackSave(contentId: string, userId: string) {
-    return this.trackMetric(contentId, userId, 'save', 1);
-  }
-
-  /**
-   * Track a share
-   */
-  static async trackShare(contentId: string, userId: string, platform?: string) {
-    return this.trackMetric(contentId, userId, 'share', 1, { platform });
-  }
-
-  /**
-   * Track a purchase/booking
-   */
-  static async trackPurchase(contentId: string, userId: string, amount: number, currency: string = 'USD') {
-    return this.trackMetric(contentId, userId, 'purchase', amount, { currency });
-  }
-
-  /**
-   * Get analytics for a specific content item
-   */
-  static async getContentAnalytics(contentId: string, startDate?: Date, endDate?: Date) {
+  static async updateContentAnalytics(contentId: string, eventType: string): Promise<void> {
     try {
-      let query = supabase
-        .from('analytics_events')
-        .select('*')
-        .eq('content_id', contentId);
+      const updateField = this.getAnalyticsField(eventType)
+      if (!updateField) return
 
-      if (startDate) {
-        query = query.gte('created_at', startDate.toISOString());
-      }
-      if (endDate) {
-        query = query.lte('created_at', endDate.toISOString());
-      }
+      const { error } = await supabase.rpc('increment_analytics_counter', {
+        content_id: contentId,
+        field_name: updateField
+      })
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      // Aggregate metrics
-      const metrics = {
-        views: 0,
-        likes: 0,
-        saves: 0,
-        shares: 0,
-        revenue: 0,
-      };
-
-      data?.forEach((event: Analytics) => {
-        switch (event.metric_type) {
-          case 'view':
-            metrics.views += event.value;
-            break;
-          case 'like':
-            metrics.likes += event.value;
-            break;
-          case 'save':
-            metrics.saves += event.value;
-            break;
-          case 'share':
-            metrics.shares += event.value;
-            break;
-          case 'purchase':
-          case 'booking':
-            metrics.revenue += event.value;
-            break;
-        }
-      });
-
-      return { success: true, data: metrics, events: data };
+      if (error) throw error
     } catch (error) {
-      console.error('Error getting content analytics:', error);
-      return { success: false, error };
+      console.error('Error updating content analytics:', error)
     }
   }
 
   /**
-   * Get analytics for a user's content
+   * Get analytics field name for event type
    */
-  static async getUserAnalytics(userId: string, startDate?: Date, endDate?: Date) {
+  private static getAnalyticsField(eventType: string): string | null {
+    const fieldMap: Record<string, string> = {
+      'view': 'view_count',
+      'like': 'like_count',
+      'comment': 'comment_count',
+      'share': 'share_count',
+      'download': 'download_count',
+      'play': 'play_count',
+      'save': 'save_count',
+      'click': 'click_count'
+    }
+    return fieldMap[eventType] || null
+  }
+
+  /**
+   * Get content analytics
+   */
+  static async getContentAnalytics(contentId: string): Promise<{
+    success: boolean
+    analytics?: ContentAnalytics
+    error?: string
+  }> {
     try {
-      // First, get all user's content
-      const { data: posts, error: postsError } = await supabase
+      const { data, error } = await supabase
         .from('posts')
-        .select('id')
-        .eq('user_id', userId);
+        .select(`
+          id,
+          title,
+          content_type,
+          media_type,
+          view_count,
+          like_count,
+          comment_count,
+          share_count,
+          download_count,
+          play_count,
+          save_count,
+          created_at,
+          updated_at
+        `)
+        .eq('id', contentId)
+        .single()
 
-      if (postsError) throw postsError;
+      if (error) throw error
 
-      const contentIds = posts?.map(p => p.id) || [];
-
-      if (contentIds.length === 0) {
-        return {
-          success: true,
-          data: {
-            totalViews: 0,
-            totalLikes: 0,
-            totalSaves: 0,
-            totalShares: 0,
-            totalRevenue: 0,
-            byContent: {},
-          },
-        };
-      }
-
-      // Get analytics for all user's content
-      let query = supabase
-        .from('analytics_events')
-        .select('*')
-        .in('content_id', contentIds);
-
-      if (startDate) {
-        query = query.gte('created_at', startDate.toISOString());
-      }
-      if (endDate) {
-        query = query.lte('created_at', endDate.toISOString());
-      }
-
-      const { data: events, error: eventsError } = await query;
-
-      if (eventsError) throw eventsError;
-
-      // Aggregate metrics
-      const totals = {
-        totalViews: 0,
-        totalLikes: 0,
-        totalSaves: 0,
-        totalShares: 0,
-        totalRevenue: 0,
-      };
-
-      const byContent: Record<string, any> = {};
-
-      events?.forEach((event: Analytics) => {
-        // Initialize content metrics if not exists
-        if (!byContent[event.content_id]) {
-          byContent[event.content_id] = {
-            views: 0,
-            likes: 0,
-            saves: 0,
-            shares: 0,
-            revenue: 0,
-          };
+      if (data) {
+        const analytics: ContentAnalytics = {
+          content_id: data.id,
+          title: data.title,
+          content_type: data.content_type,
+          media_type: data.media_type,
+          view_count: data.view_count || 0,
+          like_count: data.like_count || 0,
+          comment_count: data.comment_count || 0,
+          share_count: data.share_count || 0,
+          download_count: data.download_count || 0,
+          play_count: data.play_count || 0,
+          save_count: data.save_count || 0,
+          click_count: 0, // Not tracked in posts table yet
+          engagement_rate: this.calculateEngagementRate(data),
+          created_at: data.created_at,
+          updated_at: data.updated_at
         }
 
-        // Update content-specific metrics
-        switch (event.metric_type) {
-          case 'view':
-            byContent[event.content_id].views += event.value;
-            totals.totalViews += event.value;
-            break;
-          case 'like':
-            byContent[event.content_id].likes += event.value;
-            totals.totalLikes += event.value;
-            break;
-          case 'save':
-            byContent[event.content_id].saves += event.value;
-            totals.totalSaves += event.value;
-            break;
-          case 'share':
-            byContent[event.content_id].shares += event.value;
-            totals.totalShares += event.value;
-            break;
-          case 'purchase':
-          case 'booking':
-            byContent[event.content_id].revenue += event.value;
-            totals.totalRevenue += event.value;
-            break;
-        }
-      });
+        return { success: true, analytics }
+      }
 
-      return { success: true, data: { ...totals, byContent } };
+      return { success: false, error: 'Content not found' }
     } catch (error) {
-      console.error('Error getting user analytics:', error);
-      return { success: false, error };
+      console.error('Error getting content analytics:', error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      }
     }
   }
 
   /**
-   * Get performance over time
+   * Get user analytics
    */
-  static async getPerformanceTimeSeries(
-    userId: string,
-    metric: 'views' | 'likes' | 'saves' | 'revenue',
-    days: number = 30
-  ) {
+  static async getUserAnalytics(userId: string, timeRange: string = '30d'): Promise<{
+    success: boolean
+    analytics?: UserAnalytics
+    error?: string
+  }> {
     try {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
+      // Calculate date range
+      const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - days)
 
       // Get user's content
-      const { data: posts, error: postsError } = await supabase
+      const { data: contentData, error: contentError } = await supabase
         .from('posts')
-        .select('id')
-        .eq('user_id', userId);
-
-      if (postsError) throw postsError;
-
-      const contentIds = posts?.map(p => p.id) || [];
-
-      if (contentIds.length === 0) {
-        return { success: true, data: [] };
-      }
-
-      // Get events
-      const { data: events, error: eventsError } = await supabase
-        .from('analytics_events')
-        .select('*')
-        .in('content_id', contentIds)
+        .select(`
+          id,
+          title,
+          content_type,
+          media_type,
+          view_count,
+          like_count,
+          comment_count,
+          share_count,
+          download_count,
+          play_count,
+          save_count,
+          created_at,
+          updated_at
+        `)
+        .eq('user_id', userId)
         .gte('created_at', startDate.toISOString())
-        .order('created_at', { ascending: true });
+        .order('view_count', { ascending: false })
 
-      if (eventsError) throw eventsError;
+      if (contentError) throw contentError
 
-      // Group by date
-      const byDate: Record<string, number> = {};
+      if (contentData) {
+        const total_content = contentData.length
+        const total_views = contentData.reduce((sum, post) => sum + (post.view_count || 0), 0)
+        const total_likes = contentData.reduce((sum, post) => sum + (post.like_count || 0), 0)
+        const total_comments = contentData.reduce((sum, post) => sum + (post.comment_count || 0), 0)
+        const total_shares = contentData.reduce((sum, post) => sum + (post.share_count || 0), 0)
+        const total_downloads = contentData.reduce((sum, post) => sum + (post.download_count || 0), 0)
+        const total_plays = contentData.reduce((sum, post) => sum + (post.play_count || 0), 0)
+        const total_saves = contentData.reduce((sum, post) => sum + (post.save_count || 0), 0)
 
-      events?.forEach((event: Analytics) => {
-        const date = new Date(event.created_at).toISOString().split('T')[0];
-        
-        if (!byDate[date]) {
-          byDate[date] = 0;
+        const average_engagement = total_content > 0 ? 
+          (total_views + total_likes + total_comments + total_shares + total_downloads + total_plays + total_saves) / total_content : 0
+
+        const top_content = contentData.slice(0, 5).map(post => ({
+          content_id: post.id,
+          title: post.title,
+          content_type: post.content_type,
+          media_type: post.media_type,
+          view_count: post.view_count || 0,
+          like_count: post.like_count || 0,
+          comment_count: post.comment_count || 0,
+          share_count: post.share_count || 0,
+          download_count: post.download_count || 0,
+          play_count: post.play_count || 0,
+          save_count: post.save_count || 0,
+          click_count: 0,
+          engagement_rate: this.calculateEngagementRate(post),
+          created_at: post.created_at,
+          updated_at: post.updated_at
+        }))
+
+        const analytics: UserAnalytics = {
+          user_id: userId,
+          total_content,
+          total_views,
+          total_likes,
+          total_comments,
+          total_shares,
+          total_downloads,
+          total_plays,
+          total_saves,
+          average_engagement,
+          top_content,
+          recent_activity: [] // Would need to implement analytics_events table
         }
 
-        const metricMap = {
-          views: 'view',
-          likes: 'like',
-          saves: 'save',
-          revenue: ['purchase', 'booking'],
-        };
-
-        const targetMetrics = Array.isArray(metricMap[metric]) 
-          ? metricMap[metric] 
-          : [metricMap[metric]];
-
-        if (targetMetrics.includes(event.metric_type)) {
-          byDate[date] += event.value;
-        }
-      });
-
-      // Fill in missing dates
-      const result = [];
-      for (let i = days; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        result.push({
-          date: dateStr,
-          value: byDate[dateStr] || 0,
-        });
+        return { success: true, analytics }
       }
 
-      return { success: true, data: result };
+      return { success: false, error: 'No content found' }
     } catch (error) {
-      console.error('Error getting performance time series:', error);
-      return { success: false, error };
+      console.error('Error getting user analytics:', error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      }
     }
   }
 
   /**
-   * Get top performing content
+   * Calculate engagement rate
    */
-  static async getTopContent(userId: string, metric: 'views' | 'likes' | 'saves' | 'revenue', limit: number = 10) {
-    try {
-      const analytics = await this.getUserAnalytics(userId);
-
-      if (!analytics.success || !analytics.data) {
-        return { success: false, error: 'Failed to fetch analytics' };
-      }
-
-      const { byContent } = analytics.data;
-
-      // Get post details
-      const contentIds = Object.keys(byContent);
-      const { data: posts, error: postsError } = await supabase
-        .from('posts')
-        .select('*')
-        .in('id', contentIds);
-
-      if (postsError) throw postsError;
-
-      // Combine and sort
-      const combined = posts?.map(post => ({
-        ...post,
-        analytics: byContent[post.id],
-        sortValue: byContent[post.id]?.[metric] || 0,
-      })).sort((a, b) => b.sortValue - a.sortValue).slice(0, limit) || [];
-
-      return { success: true, data: combined };
-    } catch (error) {
-      console.error('Error getting top content:', error);
-      return { success: false, error };
-    }
+  private static calculateEngagementRate(post: any): number {
+    const totalEngagement = (post.view_count || 0) + 
+                           (post.like_count || 0) + 
+                           (post.comment_count || 0) + 
+                           (post.share_count || 0) + 
+                           (post.download_count || 0) + 
+                           (post.play_count || 0) + 
+                           (post.save_count || 0)
+    
+    return totalEngagement
   }
 
   /**
-   * Get demographic data
+   * Track view event
    */
-  static async getDemographics(userId: string) {
+  static async trackView(contentId: string, userId?: string): Promise<void> {
+    await this.trackEvent({
+      content_id: contentId,
+      user_id: userId,
+      event_type: 'view'
+    })
+  }
+
+  /**
+   * Track like event
+   */
+  static async trackLike(contentId: string, userId?: string): Promise<void> {
+    await this.trackEvent({
+      content_id: contentId,
+      user_id: userId,
+      event_type: 'like'
+    })
+  }
+
+  /**
+   * Track comment event
+   */
+  static async trackComment(contentId: string, userId?: string): Promise<void> {
+    await this.trackEvent({
+      content_id: contentId,
+      user_id: userId,
+      event_type: 'comment'
+    })
+  }
+
+  /**
+   * Track share event
+   */
+  static async trackShare(contentId: string, userId?: string, platform?: string): Promise<void> {
+    await this.trackEvent({
+      content_id: contentId,
+      user_id: userId,
+      event_type: 'share',
+      metadata: { platform }
+    })
+  }
+
+  /**
+   * Track download event
+   */
+  static async trackDownload(contentId: string, userId?: string): Promise<void> {
+    await this.trackEvent({
+      content_id: contentId,
+      user_id: userId,
+      event_type: 'download'
+    })
+  }
+
+  /**
+   * Track play event
+   */
+  static async trackPlay(contentId: string, userId?: string): Promise<void> {
+    await this.trackEvent({
+      content_id: contentId,
+      user_id: userId,
+      event_type: 'play'
+    })
+  }
+
+  /**
+   * Track save event
+   */
+  static async trackSave(contentId: string, userId?: string): Promise<void> {
+    await this.trackEvent({
+      content_id: contentId,
+      user_id: userId,
+      event_type: 'save'
+    })
+  }
+
+  /**
+   * Track click event
+   */
+  static async trackClick(contentId: string, userId?: string, element?: string): Promise<void> {
+    await this.trackEvent({
+      content_id: contentId,
+      user_id: userId,
+      event_type: 'click',
+      metadata: { element }
+    })
+  }
+
+  /**
+   * Get analytics dashboard data
+   */
+  static async getDashboardData(userId: string, timeRange: string = '30d'): Promise<{
+    success: boolean
+    data?: {
+      summary: {
+        total_posts: number
+        total_views: number
+        total_likes: number
+        total_comments: number
+        total_shares: number
+        total_downloads: number
+        total_plays: number
+        total_saves: number
+        average_engagement: number
+      }
+      top_posts: ContentAnalytics[]
+      recent_activity: AnalyticsEvent[]
+    }
+    error?: string
+  }> {
     try {
-      const { data: posts } = await supabase
-        .from('posts')
-        .select('id')
-        .eq('user_id', userId);
-
-      const contentIds = posts?.map(p => p.id) || [];
-
-      if (contentIds.length === 0) {
-        return { success: true, data: { locations: [], devices: [], ageRanges: [] } };
+      const userAnalytics = await this.getUserAnalytics(userId, timeRange)
+      
+      if (!userAnalytics.success || !userAnalytics.analytics) {
+        return { success: false, error: userAnalytics.error }
       }
 
-      const { data: events } = await supabase
-        .from('analytics_events')
-        .select('metadata')
-        .in('content_id', contentIds)
-        .eq('metric_type', 'view');
-
-      // Aggregate demographics
-      const locations: Record<string, number> = {};
-      const devices: Record<string, number> = {};
-      const ageRanges: Record<string, number> = {};
-
-      events?.forEach((event: Analytics) => {
-        if (event.metadata?.location) {
-          locations[event.metadata.location] = (locations[event.metadata.location] || 0) + 1;
-        }
-        if (event.metadata?.device_type) {
-          devices[event.metadata.device_type] = (devices[event.metadata.device_type] || 0) + 1;
-        }
-        if (event.metadata?.age_range) {
-          ageRanges[event.metadata.age_range] = (ageRanges[event.metadata.age_range] || 0) + 1;
-        }
-      });
-
-      return {
-        success: true,
-        data: {
-          locations: Object.entries(locations).map(([location, count]) => ({ location, count })).sort((a, b) => b.count - a.count),
-          devices: Object.entries(devices).map(([device, count]) => ({ device, count })).sort((a, b) => b.count - a.count),
-          ageRanges: Object.entries(ageRanges).map(([age, count]) => ({ age, count })).sort((a, b) => b.count - a.count),
+      const data = {
+        summary: {
+          total_posts: userAnalytics.analytics.total_content,
+          total_views: userAnalytics.analytics.total_views,
+          total_likes: userAnalytics.analytics.total_likes,
+          total_comments: userAnalytics.analytics.total_comments,
+          total_shares: userAnalytics.analytics.total_shares,
+          total_downloads: userAnalytics.analytics.total_downloads,
+          total_plays: userAnalytics.analytics.total_plays,
+          total_saves: userAnalytics.analytics.total_saves,
+          average_engagement: userAnalytics.analytics.average_engagement
         },
-      };
+        top_posts: userAnalytics.analytics.top_content,
+        recent_activity: userAnalytics.analytics.recent_activity
+      }
+
+      return { success: true, data }
     } catch (error) {
-      console.error('Error getting demographics:', error);
-      return { success: false, error };
+      console.error('Error getting dashboard data:', error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      }
     }
   }
 }
-
-export default AnalyticsService;
-

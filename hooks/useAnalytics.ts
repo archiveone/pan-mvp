@@ -1,115 +1,192 @@
-'use client';
+import { useCallback, useState, useEffect } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import { AnalyticsService } from '@/services/analyticsService'
 
-import { useEffect, useRef } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import AdvancedAnalyticsService from '@/services/advancedAnalyticsService';
+export interface UseAnalyticsReturn {
+  trackView: (contentId: string) => Promise<void>
+  trackLike: (contentId: string) => Promise<void>
+  trackComment: (contentId: string) => Promise<void>
+  trackShare: (contentId: string, platform?: string) => Promise<void>
+  trackDownload: (contentId: string) => Promise<void>
+  trackPlay: (contentId: string) => Promise<void>
+  trackSave: (contentId: string) => Promise<void>
+  trackClick: (contentId: string, element?: string) => Promise<void>
+  trackEvent: (contentId: string, eventType: string, metadata?: Record<string, any>) => Promise<void>
+}
 
-/**
- * Hook to automatically track page views
- */
-export function usePageView(contentId: string, contentType?: string) {
-  const { user } = useAuth();
-  const tracked = useRef(false);
+export function useAnalytics(): UseAnalyticsReturn {
+  const { user } = useAuth()
+
+  const trackView = useCallback(async (contentId: string) => {
+    try {
+      await AnalyticsService.trackView(contentId, user?.id)
+    } catch (error) {
+      console.error('Error tracking view:', error)
+    }
+  }, [user?.id])
+
+  const trackLike = useCallback(async (contentId: string) => {
+    try {
+      await AnalyticsService.trackLike(contentId, user?.id)
+    } catch (error) {
+      console.error('Error tracking like:', error)
+    }
+  }, [user?.id])
+
+  const trackComment = useCallback(async (contentId: string) => {
+    try {
+      await AnalyticsService.trackComment(contentId, user?.id)
+    } catch (error) {
+      console.error('Error tracking comment:', error)
+    }
+  }, [user?.id])
+
+  const trackShare = useCallback(async (contentId: string, platform?: string) => {
+    try {
+      await AnalyticsService.trackShare(contentId, user?.id, platform)
+    } catch (error) {
+      console.error('Error tracking share:', error)
+    }
+  }, [user?.id])
+
+  const trackDownload = useCallback(async (contentId: string) => {
+    try {
+      await AnalyticsService.trackDownload(contentId, user?.id)
+    } catch (error) {
+      console.error('Error tracking download:', error)
+    }
+  }, [user?.id])
+
+  const trackPlay = useCallback(async (contentId: string) => {
+    try {
+      await AnalyticsService.trackPlay(contentId, user?.id)
+    } catch (error) {
+      console.error('Error tracking play:', error)
+    }
+  }, [user?.id])
+
+  const trackSave = useCallback(async (contentId: string) => {
+    try {
+      await AnalyticsService.trackSave(contentId, user?.id)
+    } catch (error) {
+      console.error('Error tracking save:', error)
+    }
+  }, [user?.id])
+
+  const trackClick = useCallback(async (contentId: string, element?: string) => {
+    try {
+      await AnalyticsService.trackClick(contentId, user?.id, element)
+    } catch (error) {
+      console.error('Error tracking click:', error)
+    }
+  }, [user?.id])
+
+  const trackEvent = useCallback(async (
+    contentId: string, 
+    eventType: string, 
+    metadata?: Record<string, any>
+  ) => {
+    try {
+      await AnalyticsService.trackEvent({
+        content_id: contentId,
+        user_id: user?.id,
+        event_type: eventType as any,
+        metadata
+      })
+    } catch (error) {
+      console.error('Error tracking event:', error)
+    }
+  }, [user?.id])
+
+  return {
+    trackView,
+    trackLike,
+    trackComment,
+    trackShare,
+    trackDownload,
+    trackPlay,
+    trackSave,
+    trackClick,
+    trackEvent
+  }
+}
+
+// Hook for getting analytics data
+export function useAnalyticsData(userId?: string, timeRange: string = '30d') {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadData = useCallback(async () => {
+    if (!userId) return
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      const result = await AnalyticsService.getUserAnalytics(userId, timeRange)
+      
+      if (result.success && result.analytics) {
+        setData(result.analytics)
+      } else {
+        setError(result.error || 'Failed to load analytics')
+      }
+    } catch (err) {
+      console.error('Error loading analytics data:', err)
+      setError('Failed to load analytics data')
+    } finally {
+      setLoading(false)
+    }
+  }, [userId, timeRange])
 
   useEffect(() => {
-    if (tracked.current) return;
-    
-    const sessionId = AdvancedAnalyticsService.generateSessionId();
-    
-    // Track view
-    AdvancedAnalyticsService.trackView({
-      contentId,
-      userId: user?.id,
-      sessionId,
-      deviceType: getDeviceType(),
-      referrer: typeof document !== 'undefined' ? document.referrer : undefined,
-      location: {
-        // You can add geolocation here if needed
-      },
-    });
+    loadData()
+  }, [loadData])
 
-    tracked.current = true;
-  }, [contentId, user]);
+  return {
+    data,
+    loading,
+    error,
+    refetch: loadData
+  }
 }
 
-/**
- * Hook to track streaming/playback
- */
-export function useStreamTracking(contentId: string, totalDuration: number, mediaType: 'audio' | 'video') {
-  const { user } = useAuth();
-  const sessionId = useRef(AdvancedAnalyticsService.generateSessionId());
-  const startTime = useRef<number>(0);
+// Hook for getting dashboard data
+export function useDashboardData(userId?: string, timeRange: string = '30d') {
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const startStream = () => {
-    startTime.current = Date.now();
-    AdvancedAnalyticsService.startStream(contentId, user?.id, sessionId.current, totalDuration);
-  };
+  const loadData = useCallback(async () => {
+    if (!userId) return
 
-  const updateStream = (currentTime: number) => {
-    const elapsed = Math.floor((Date.now() - startTime.current) / 1000);
-    AdvancedAnalyticsService.updateStream(sessionId.current, elapsed, totalDuration);
-  };
+    try {
+      setLoading(true)
+      setError(null)
 
-  const endStream = (currentTime: number) => {
-    const elapsed = Math.floor((Date.now() - startTime.current) / 1000);
-    AdvancedAnalyticsService.updateStream(sessionId.current, elapsed, totalDuration);
-  };
+      const result = await AnalyticsService.getDashboardData(userId, timeRange)
+      
+      if (result.success && result.data) {
+        setData(result.data)
+      } else {
+        setError(result.error || 'Failed to load dashboard data')
+      }
+    } catch (err) {
+      console.error('Error loading dashboard data:', err)
+      setError('Failed to load dashboard data')
+    } finally {
+      setLoading(false)
+    }
+  }, [userId, timeRange])
 
-  return { startStream, updateStream, endStream };
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  return {
+    data,
+    loading,
+    error,
+    refetch: loadData
+  }
 }
-
-/**
- * Track engagement actions (like, save, share)
- */
-export function useEngagementTracking() {
-  const { user } = useAuth();
-
-  const trackLike = async (contentId: string) => {
-    if (!user) return;
-    
-    await AdvancedAnalyticsService.trackView({
-      contentId,
-      userId: user.id,
-      sessionId: AdvancedAnalyticsService.generateSessionId(),
-      liked: true,
-      deviceType: getDeviceType(),
-    });
-  };
-
-  const trackSave = async (contentId: string) => {
-    if (!user) return;
-    
-    await AdvancedAnalyticsService.trackView({
-      contentId,
-      userId: user.id,
-      sessionId: AdvancedAnalyticsService.generateSessionId(),
-      saved: true,
-      deviceType: getDeviceType(),
-    });
-  };
-
-  const trackShare = async (contentId: string) => {
-    if (!user) return;
-    
-    await AdvancedAnalyticsService.trackView({
-      contentId,
-      userId: user.id,
-      sessionId: AdvancedAnalyticsService.generateSessionId(),
-      shared: true,
-      deviceType: getDeviceType(),
-    });
-  };
-
-  return { trackLike, trackSave, trackShare };
-}
-
-// Helper function
-function getDeviceType(): string {
-  if (typeof window === 'undefined') return 'unknown';
-  
-  const ua = navigator.userAgent;
-  if (/mobile/i.test(ua)) return 'mobile';
-  if (/tablet|ipad/i.test(ua)) return 'tablet';
-  return 'desktop';
-}
-
