@@ -24,6 +24,41 @@ header {
   border-top: none !important;
 }
 
+/* Add safe area padding for mobile status bar */
+@supports (padding: max(0px)) {
+  .app-header {
+    padding-top: max(env(safe-area-inset-top), 0px) !important;
+  }
+}
+
+/* Fallback for older browsers */
+.app-header {
+  padding-top: env(safe-area-inset-top, 0px) !important;
+}
+
+/* Additional mobile header background fix */
+@media (max-width: 768px) {
+  .app-header {
+    background: white !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    z-index: 50 !important;
+  }
+  
+  /* Ensure body has proper top padding to account for fixed header */
+  body {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 60px);
+  }
+  
+  /* Dark mode support */
+  .dark .app-header {
+    background: #1f2937 !important;
+  }
+}
+
 /* Fix star button visibility */
 .star-button {
   position: absolute;
@@ -133,7 +168,7 @@ header {
     left: 0 !important;
     right: 0 !important;
     margin: 0 !important;
-    padding-top: 0 !important;
+    padding-top: env(safe-area-inset-top, 8px) !important;
     padding-bottom: 0 !important;
   }
   
