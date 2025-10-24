@@ -17,7 +17,7 @@ export default function AppHeader() {
   return (
     <>
       <header className="app-header sticky top-0 bg-white dark:bg-gray-900 z-50 border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 sm:py-2">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1">
           {/* Pan Logo - Always at the top */}
           <div className="text-center">
             <Link href="/" className="inline-block">

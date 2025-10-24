@@ -244,8 +244,26 @@ body:has(.save-modal) {
   display: none; /* Chrome, Safari, Opera */
 }
 
-/* Ensure tags don't shrink on mobile */
+/* Ensure tags don't shrink on mobile and make them wider */
 .trending-tags button {
   flex-shrink: 0;
   white-space: nowrap;
+  min-width: fit-content;
+  padding: 8px 12px !important; /* Wider padding on mobile */
+}
+
+/* Make trending tags container wider on mobile */
+@media (max-width: 768px) {
+  .trending-tags {
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: -4px;
+    margin-right: -4px;
+  }
+  
+  .trending-tags button {
+    font-size: 13px !important;
+    padding: 10px 16px !important;
+    min-height: 36px;
+  }
 }
