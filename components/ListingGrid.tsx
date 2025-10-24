@@ -148,6 +148,45 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
 
   return (
     <>
+      {/* Grid Controls */}
+      <div className="flex items-center justify-between mb-4 px-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600 dark:text-gray-400">Grid Size:</span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={zoomIn}
+              className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              title="Zoom In (Larger Images)"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+              </svg>
+            </button>
+            <span className="text-xs text-gray-500 dark:text-gray-400 px-2">
+              {zoomLevel === 1 ? '1 per row' : 
+               zoomLevel === 2 ? '2 per row' : 
+               zoomLevel === 3 ? '3-4 per row' : 
+               zoomLevel === 4 ? '4-5 per row' : 
+               zoomLevel === 5 ? '5-6 per row' : 
+               '6+ per row'}
+            </span>
+            <button
+              onClick={zoomOut}
+              className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              title="Zoom Out (More Images)"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          {listings.length} items
+        </div>
+      </div>
+
       {/* Subtle Zoom Level Indicator */}
       {showZoomIndicator && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm animate-fade-in">

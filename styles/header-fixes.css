@@ -233,3 +233,19 @@ body:has(.save-modal) {
   inset: 0 !important;
   z-index: 999999 !important;
 }
+
+/* Trending Tags Mobile Scrolling */
+.trending-tags {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.trending-tags::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Ensure tags don't shrink on mobile */
+.trending-tags button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}

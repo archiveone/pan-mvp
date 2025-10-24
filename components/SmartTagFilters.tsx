@@ -93,8 +93,8 @@ export default function SmartTagFilters({
           )}
         </div>
 
-        {/* Tag Pills */}
-        <div className="flex flex-wrap gap-1.5">
+        {/* Tag Pills - Single line on mobile */}
+        <div className="trending-tags flex gap-1.5 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {displayTags.map(({ tag, count }) => {
             const isSelected = localSelectedTags.includes(tag)
             return (
@@ -134,7 +134,7 @@ export default function SmartTagFilters({
             <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1.5">
               Similar:
             </p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="trending-tags flex gap-1.5 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
               {relatedTags.map(({ tag, count }) => (
                 <button
                   key={tag}
