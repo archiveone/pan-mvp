@@ -4,6 +4,7 @@
 .app-header {
   /* Remove safe area top that was causing spacing issues */
   padding-top: 0 !important;
+  margin-top: 0 !important;
 }
 
 /* Ensure header reaches the top on mobile */
@@ -14,6 +15,13 @@ header {
   /* Remove any top margin/padding that might be added by safe areas */
   margin-top: 0;
   padding-top: 0;
+}
+
+/* Force header to touch the very top */
+.app-header {
+  margin: 0 !important;
+  padding-top: 0 !important;
+  border-top: none !important;
 }
 
 /* Fix star button visibility */
@@ -91,17 +99,56 @@ header {
 
 /* Mobile-specific fixes */
 @media (max-width: 768px) {
-  /* Make header even more compact on mobile */
+  /* Make header touch the top and center logo properly */
   .app-header {
-    padding: 4px 12px;
+    padding: 0 12px;
+    margin: 0;
+    position: sticky;
+    top: 0;
+    z-index: 50;
   }
   
   .app-header .logo-container {
-    height: 32px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .app-header .logo {
-    height: 40px;
+    height: 32px;
+    object-fit: contain;
+  }
+  
+  /* Ensure header container has no extra spacing */
+  .app-header > div {
+    padding: 8px 12px;
+    margin: 0;
+  }
+  
+  /* Force header to touch the very top of the screen */
+  .app-header {
+    position: sticky !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  
+  /* Ensure logo is perfectly centered vertically */
+  .logo-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 40px !important;
+  }
+  
+  .logo {
+    object-fit: contain !important;
+    max-height: 32px !important;
+    width: auto !important;
   }
   
   /* Ensure star button is visible on mobile */
