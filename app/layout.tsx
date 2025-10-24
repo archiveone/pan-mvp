@@ -6,6 +6,7 @@ import { ThemePreferencesProvider } from '@/contexts/ThemePreferencesContext'
 import { ToastContainer } from '@/components/Toast'
 import CookieConsent from '@/components/CookieConsent'
 import InstallPrompt from '@/components/InstallPrompt'
+import { setupMobileHoverFix } from '@/lib/mobile-hover-fix'
 import Script from 'next/script'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -134,6 +135,44 @@ export default function RootLayout({
               // Store for later use
               window.deferredPrompt = e;
             });
+          `}
+        </Script>
+
+        {/* Mobile hover fix */}
+        <Script id="mobile-hover-fix" strategy="afterInteractive">
+          {`
+            // Mobile hover fix - prevents hover states from staying active on touch devices
+            function initMobileHoverFix() {
+              const hasHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+              const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+              
+              if (isTouch && !hasHover) {
+                document.body.classList.add('touch-device');
+                
+                // Add CSS for touch devices
+                const style = document.createElement('style');
+                style.textContent = \`
+                  .touch-device .group-hover\\:opacity-100 { opacity: 1 !important; }
+                  .touch-device .group-hover\\:bg-white\\/30 { background-color: rgba(255, 255, 255, 0.3) !important; }
+                  .touch-device .group-hover\\:scale-105 { transform: scale(1.05) !important; }
+                  .touch-device .group-hover\\:shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important; }
+                  .touch-device .hover\\:shadow-xl:hover, .touch-device .hover\\:scale-\\[1\\.02\\]:hover { 
+                    box-shadow: initial !important; transform: none !important; 
+                  }
+                \`;
+                document.head.appendChild(style);
+              }
+            }
+            
+            // Initialize on load
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', initMobileHoverFix);
+            } else {
+              initMobileHoverFix();
+            }
+            
+            // Re-run on resize (orientation change)
+            window.addEventListener('resize', initMobileHoverFix);
           `}
         </Script>
       </body>

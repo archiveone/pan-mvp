@@ -1,193 +1,231 @@
-'use client'
+'use client';
 
-import AppHeader from '@/components/AppHeader'
-import AppFooter from '@/components/AppFooter'
-import { FileText, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
+import React from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function TermsOfService() {
+  const router = useRouter();
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      <AppHeader />
-      
-      <main className="max-w-4xl mx-auto px-4 py-12">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-black dark:bg-white rounded-xl">
-              <FileText className="w-8 h-8 text-white dark:text-black" />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center h-16">
+            <button
+              onClick={() => router.back()}
+              className="mr-4 p-2 text-gray-400 hover:text-gray-600"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h1 className="text-xl font-semibold text-gray-900">Terms of Service</h1>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="prose prose-lg max-w-none">
+            <h1 className="text-3xl font-bold text-gray-900 mb-6">Terms of Service</h1>
+            
+            <p className="text-gray-600 mb-6">
+              <strong>Effective Date:</strong> {new Date().toLocaleDateString()}
+            </p>
+
+            <p className="text-gray-600 mb-8">
+              Welcome to Pan! These Terms of Service ("Terms") govern your use of our social platform and marketplace. 
+              By accessing or using our service, you agree to be bound by these Terms.
+            </p>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Acceptance of Terms</h2>
+            
+            <p className="text-gray-600 mb-6">
+              By creating an account or using our service, you acknowledge that you have read, understood, 
+              and agree to be bound by these Terms and our Privacy Policy. If you do not agree to these Terms, 
+              please do not use our service.
+            </p>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Description of Service</h2>
+            
+            <p className="text-gray-600 mb-6">
+              Pan is a social platform and marketplace that allows users to:
+            </p>
+            
+            <ul className="list-disc pl-6 mb-6 text-gray-600">
+              <li>Create and share posts, photos, and videos</li>
+              <li>Organize content in personal hubs</li>
+                  <li>Buy and sell items in the marketplace</li>
+              <li>Connect with friends and communities</li>
+              <li>Send messages and participate in group chats</li>
+              <li>Create and join events</li>
+              <li>Follow other users and build networks</li>
+            </ul>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">User Accounts</h2>
+            
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">Account Creation</h3>
+            <ul className="list-disc pl-6 mb-6 text-gray-600">
+              <li>You must be at least 13 years old to create an account</li>
+              <li>You must provide accurate and complete information</li>
+              <li>You are responsible for maintaining account security</li>
+              <li>One person may not maintain multiple accounts</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">Account Responsibilities</h3>
+            <ul className="list-disc pl-6 mb-6 text-gray-600">
+              <li>Keep your login credentials secure</li>
+              <li>Notify us immediately of any unauthorized access</li>
+              <li>You are responsible for all activity under your account</li>
+              <li>Update your information when it changes</li>
+                </ul>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">User Conduct</h2>
+            
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">Prohibited Activities</h3>
+            <p className="text-gray-600 mb-4">You agree not to:</p>
+            
+            <ul className="list-disc pl-6 mb-6 text-gray-600">
+                  <li>Post illegal, harmful, or offensive content</li>
+              <li>Harass, abuse, or threaten other users</li>
+              <li>Impersonate others or create fake accounts</li>
+                  <li>Spam or send unsolicited messages</li>
+                  <li>Violate intellectual property rights</li>
+              <li>Attempt to hack or compromise our systems</li>
+              <li>Use automated tools to access our service</li>
+              <li>Engage in fraudulent activities</li>
+              <li>Post false or misleading information</li>
+              <li>Distribute malware or harmful software</li>
+            </ul>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Content and Intellectual Property</h2>
+            
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">Your Content</h3>
+            <ul className="list-disc pl-6 mb-6 text-gray-600">
+              <li>You retain ownership of content you create</li>
+              <li>You grant us a license to use your content on our platform</li>
+              <li>You are responsible for ensuring you have rights to your content</li>
+              <li>You must not post content that violates others' rights</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">Our Content</h3>
+            <ul className="list-disc pl-6 mb-6 text-gray-600">
+              <li>Our platform, design, and features are protected by copyright</li>
+              <li>You may not copy, modify, or distribute our content</li>
+              <li>Our trademarks and logos are our property</li>
+                </ul>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Marketplace and Transactions</h2>
+            
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">Buying and Selling</h3>
+            <ul className="list-disc pl-6 mb-6 text-gray-600">
+              <li>All transactions are between users directly</li>
+              <li>We facilitate but do not guarantee transactions</li>
+              <li>Users are responsible for payment and delivery</li>
+              <li>We may charge fees for certain marketplace features</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">Prohibited Items</h3>
+            <ul className="list-disc pl-6 mb-6 text-gray-600">
+              <li>Illegal items or services</li>
+              <li>Counterfeit or stolen goods</li>
+              <li>Dangerous or hazardous materials</li>
+              <li>Adult content or services</li>
+              <li>Weapons or ammunition</li>
+              <li>Prescription drugs or medical devices</li>
+            </ul>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Privacy and Data</h2>
+            
+            <p className="text-gray-600 mb-6">
+              Your privacy is important to us. Please review our Privacy Policy to understand how we 
+              collect, use, and protect your information. By using our service, you consent to our 
+              data practices as described in our Privacy Policy.
+            </p>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Service Availability</h2>
+            
+            <p className="text-gray-600 mb-6">
+              We strive to provide reliable service, but we cannot guarantee uninterrupted access. 
+              We may temporarily suspend service for maintenance, updates, or other reasons. We are 
+              not liable for any downtime or service interruptions.
+            </p>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Termination</h2>
+            
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">By You</h3>
+            <p className="text-gray-600 mb-6">
+              You may terminate your account at any time by contacting us or using account deletion 
+              features in the app. Upon termination, your content may be deleted according to our 
+              data retention policies.
+            </p>
+
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">By Us</h3>
+            <p className="text-gray-600 mb-6">
+              We may suspend or terminate your account if you violate these Terms, engage in harmful 
+              behavior, or for other reasons at our discretion. We will provide notice when possible.
+            </p>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Disclaimers and Limitations</h2>
+            
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">Service Disclaimer</h3>
+            <p className="text-gray-600 mb-6">
+              Our service is provided "as is" without warranties of any kind. We disclaim all warranties, 
+              express or implied, including merchantability, fitness for a particular purpose, and non-infringement.
+            </p>
+
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">Limitation of Liability</h3>
+            <p className="text-gray-600 mb-6">
+              To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, 
+              special, consequential, or punitive damages, including loss of profits, data, or use, arising 
+              from your use of our service.
+            </p>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Dispute Resolution</h2>
+            
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">Governing Law</h3>
+            <p className="text-gray-600 mb-6">
+              These Terms are governed by the laws of [Your Jurisdiction]. Any disputes will be resolved 
+              in the courts of [Your Jurisdiction].
+            </p>
+
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">Dispute Process</h3>
+            <ul className="list-disc pl-6 mb-6 text-gray-600">
+              <li>Contact us first to attempt resolution</li>
+              <li>If unresolved, disputes may be subject to binding arbitration</li>
+              <li>Class action waivers may apply</li>
+            </ul>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Changes to Terms</h2>
+            
+            <p className="text-gray-600 mb-6">
+              We may update these Terms from time to time. We will notify you of material changes by 
+              posting the new Terms on our platform and updating the "Effective Date." Your continued 
+              use of our service after changes constitutes acceptance of the new Terms.
+            </p>
+
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Contact Information</h2>
+            
+            <p className="text-gray-600 mb-4">
+              If you have questions about these Terms, please contact us:
+            </p>
+            
+            <div className="bg-gray-50 p-6 rounded-lg">
+              <p className="text-gray-700">
+                <strong>Email:</strong> legal@pan.app<br/>
+                <strong>Address:</strong> [Your Business Address]<br/>
+                <strong>Phone:</strong> [Your Contact Number]
+              </p>
             </div>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-                Terms of Service
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Last updated: {new Date().toLocaleDateString()}
+
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <p className="text-sm text-gray-500">
+                These Terms of Service are effective as of {new Date().toLocaleDateString()} and were last updated on {new Date().toLocaleDateString()}.
               </p>
             </div>
           </div>
         </div>
-
-        <div className="space-y-8">
-          {/* Acceptance */}
-          <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              1. Acceptance of Terms
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              By accessing or using Pan, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using this platform.
-            </p>
-          </section>
-
-          {/* User Accounts */}
-          <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              2. User Accounts
-            </h2>
-            <div className="space-y-3 text-gray-600 dark:text-gray-400">
-              <p>When creating an account, you must:</p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Provide accurate and complete information</li>
-                <li>Maintain the security of your account</li>
-                <li>Be at least 13 years old (or 16 in EU)</li>
-                <li>Not create multiple accounts</li>
-                <li>Not impersonate others</li>
-              </ul>
-            </div>
-          </section>
-
-          {/* Acceptable Use */}
-          <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                  3. Acceptable Use
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-2">You may use Pan to:</p>
-                <ul className="list-disc list-inside space-y-1 ml-4 text-gray-600 dark:text-gray-400">
-                  <li>Share content and connect with others</li>
-                  <li>Buy and sell items in the marketplace</li>
-                  <li>Join communities and participate in discussions</li>
-                  <li>Organize and attend events</li>
-                  <li>Message other users</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          {/* Prohibited Conduct */}
-          <section className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6">
-            <div className="flex items-start gap-3">
-              <XCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-1" />
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                  4. Prohibited Conduct
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-2">You may NOT:</p>
-                <ul className="list-disc list-inside space-y-1 ml-4 text-gray-600 dark:text-gray-400">
-                  <li>Post illegal, harmful, or offensive content</li>
-                  <li>Harass, threaten, or bully others</li>
-                  <li>Spam or send unsolicited messages</li>
-                  <li>Violate intellectual property rights</li>
-                  <li>Attempt to hack or disrupt the platform</li>
-                  <li>Use bots or automated tools</li>
-                  <li>Sell prohibited items or services</li>
-                  <li>Engage in fraudulent activity</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          {/* Content */}
-          <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              5. Content Rights
-            </h2>
-            <div className="space-y-3 text-gray-600 dark:text-gray-400">
-              <p>
-                You retain ownership of content you post on Pan. By posting content, you grant us a worldwide, non-exclusive, royalty-free license to use, reproduce, modify, and distribute your content on the platform.
-              </p>
-              <p>
-                You are responsible for your content and must have the rights to post it.
-              </p>
-            </div>
-          </section>
-
-          {/* Marketplace */}
-          <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              6. Marketplace Terms
-            </h2>
-            <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-400 ml-4">
-              <li>Pan is a platform connecting buyers and sellers</li>
-              <li>We are not party to transactions between users</li>
-              <li>Sellers are responsible for accurate listings</li>
-              <li>Payment processing fees may apply</li>
-              <li>Refunds are subject to seller policies</li>
-            </ul>
-          </section>
-
-          {/* Termination */}
-          <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              7. Termination
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              We reserve the right to suspend or terminate your account at any time for violating these terms. You may also delete your account at any time through your account settings.
-            </p>
-          </section>
-
-          {/* Disclaimer */}
-          <section className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-6">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-1" />
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                  8. Disclaimer
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Pan is provided "as is" without warranties of any kind. We do not guarantee uninterrupted access, accuracy of content, or specific results from using the platform.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Limitation of Liability */}
-          <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              9. Limitation of Liability
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Pan shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use or inability to use the service.
-            </p>
-          </section>
-
-          {/* Changes */}
-          <section className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              10. Changes to Terms
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              We may modify these terms at any time. Continued use of Pan after changes constitutes acceptance of the new terms. We will notify users of significant changes.
-            </p>
-          </section>
-
-          {/* Contact */}
-          <section className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Contact Us
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-3">
-              For questions about these Terms of Service:
-            </p>
-            <p className="text-gray-900 dark:text-white font-medium">
-              legal@pan.app
-            </p>
-          </section>
-        </div>
-      </main>
-
-      <AppFooter />
+      </div>
     </div>
-  )
+  );
 }
-

@@ -13,7 +13,12 @@
     "export": "next export",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "generate-icons": "node scripts/generate-icons.js"
+    "generate-icons": "node scripts/generate-icons.js",
+    "build-mobile": "node scripts/build-mobile-app.js",
+    "mobile:ios": "npx cap open ios",
+    "mobile:android": "npx cap open android",
+    "mobile:copy": "npx cap copy",
+    "mobile:sync": "npx cap sync"
   },
   "dependencies": {
     "@google/genai": "^1.22.0",

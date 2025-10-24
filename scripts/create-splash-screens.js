@@ -1,0 +1,301 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+
+console.log('🎨 Creating Splash Screens and Icons');
+console.log('====================================\n');
+
+// Create directories
+const iconsDir = 'public/icons';
+const splashDir = 'public/splash';
+
+if (!fs.existsSync(iconsDir)) {
+  fs.mkdirSync(iconsDir, { recursive: true });
+  console.log('✅ Created icons directory');
+}
+
+if (!fs.existsSync(splashDir)) {
+  fs.mkdirSync(splashDir, { recursive: true });
+  console.log('✅ Created splash directory');
+}
+
+// Check if source logo exists
+const sourceLogo = 'public/pan logo transparent.png';
+if (!fs.existsSync(sourceLogo)) {
+  console.log('❌ Source logo not found:', sourceLogo);
+  console.log('Please ensure "pan logo transparent.png" exists in the public folder');
+  console.log('\nAlternative: You can use any PNG image and rename it to "pan logo transparent.png"');
+  return;
+}
+
+console.log('✅ Source logo found:', sourceLogo);
+
+// Create a simple HTML viewer for splash screens
+const htmlViewer = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pan App - Splash Screen Viewer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .splash-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .splash-item {
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fafafa;
+        }
+        .splash-item img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .splash-item h3 {
+            margin: 10px 0 5px 0;
+            color: #333;
+            font-size: 14px;
+        }
+        .splash-item p {
+            margin: 0;
+            color: #666;
+            font-size: 12px;
+        }
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+        }
+        .status.warning {
+            background: #fff3e0;
+            color: #f57c00;
+            border: 1px solid #ff9800;
+        }
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Pan App - Splash Screen Viewer</h1>
+        
+        <div class="instructions">
+            <h3>📋 Instructions</h3>
+            <p><strong>To create splash screens:</strong></p>
+            <ol>
+                <li>Install ImageMagick: <a href="https://imagemagick.org/script/download.php#windows" target="_blank">Download for Windows</a></li>
+                <li>Run: <code>npm run generate-icons</code></li>
+                <li>Refresh this page to see your splash screens</li>
+            </ol>
+            <p><strong>Alternative:</strong> Use online tools like <a href="https://realfavicongenerator.net/" target="_blank">RealFaviconGenerator</a> or <a href="https://www.pwabuilder.com/" target="_blank">PWA Builder</a></p>
+        </div>
+
+        <div class="section">
+            <h2>📱 iOS Splash Screens</h2>
+            <div id="ios-splash-status" class="status warning">
+                ⚠️ iOS splash screens not found. Run <code>npm run generate-icons</code> to create them.
+            </div>
+            <div id="ios-splash-grid" class="splash-grid">
+                <!-- iOS splash screens will be loaded here -->
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🤖 Android Splash Screens</h2>
+            <div id="android-splash-status" class="status warning">
+                ⚠️ Android splash screens not found. Run <code>npm run generate-icons</code> to create them.
+            </div>
+            <div id="android-splash-grid" class="splash-grid">
+                <!-- Android splash screens will be loaded here -->
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎯 App Icons</h2>
+            <div id="icons-status" class="status warning">
+                ⚠️ App icons not found. Run <code>npm run generate-icons</code> to create them.
+            </div>
+            <div id="icons-grid" class="splash-grid">
+                <!-- App icons will be loaded here -->
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Required Sizes</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div>
+                    <h3>iOS Splash Screens</h3>
+                    <ul style="font-size: 14px; line-height: 1.6;">
+                        <li>2048x2732 (iPad Pro 12.9")</li>
+                        <li>1668x2388 (iPad Pro 11")</li>
+                        <li>1536x2048 (iPad)</li>
+                        <li>1242x2688 (iPhone 11 Pro Max)</li>
+                        <li>1125x2436 (iPhone 11 Pro)</li>
+                        <li>828x1792 (iPhone 11)</li>
+                        <li>750x1334 (iPhone 8)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>App Icons</h3>
+                    <ul style="font-size: 14px; line-height: 1.6;">
+                        <li>1024x1024 (App Store)</li>
+                        <li>512x512 (Play Store)</li>
+                        <li>180x180 (iOS Home Screen)</li>
+                        <li>192x192 (Android)</li>
+                        <li>72x72, 96x96, 128x128, 144x144, 152x152, 384x384</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check for splash screens and icons
+        function checkAssets() {
+            const iosSplashSizes = [
+                { name: 'iPad Pro 12.9"', size: '2048x2732' },
+                { name: 'iPad Pro 11"', size: '1668x2388' },
+                { name: 'iPad', size: '1536x2048' },
+                { name: 'iPhone 11 Pro Max', size: '1242x2688' },
+                { name: 'iPhone 11 Pro', size: '1125x2436' },
+                { name: 'iPhone 11', size: '828x1792' },
+                { name: 'iPhone 8', size: '750x1334' }
+            ];
+
+            const iconSizes = [72, 96, 128, 144, 152, 180, 192, 384, 512, 1024];
+
+            // Check iOS splash screens
+            let iosFound = 0;
+            iosSplashSizes.forEach(splash => {
+                const img = new Image();
+                img.onload = () => {
+                    iosFound++;
+                    const item = document.createElement('div');
+                    item.className = 'splash-item';
+                    item.innerHTML = \`
+                        <img src="splash/splash-\${splash.size}.png" alt="\${splash.name}">
+                        <h3>\${splash.name}</h3>
+                        <p>\${splash.size}</p>
+                    \`;
+                    document.getElementById('ios-splash-grid').appendChild(item);
+                    
+                    if (iosFound === iosSplashSizes.length) {
+                        document.getElementById('ios-splash-status').innerHTML = '✅ iOS splash screens found!';
+                        document.getElementById('ios-splash-status').className = 'status success';
+                    }
+                };
+                img.onerror = () => {
+                    const item = document.createElement('div');
+                    item.className = 'splash-item';
+                    item.innerHTML = \`
+                        <div style="background: #f0f0f0; height: 100px; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+                            <span style="color: #999;">Missing</span>
+                        </div>
+                        <h3>\${splash.name}</h3>
+                        <p>\${splash.size}</p>
+                    \`;
+                    document.getElementById('ios-splash-grid').appendChild(item);
+                };
+                img.src = \`splash/splash-\${splash.size}.png\`;
+            });
+
+            // Check app icons
+            let iconsFound = 0;
+            iconSizes.forEach(size => {
+                const img = new Image();
+                img.onload = () => {
+                    iconsFound++;
+                    const item = document.createElement('div');
+                    item.className = 'splash-item';
+                    item.innerHTML = \`
+                        <img src="icons/icon-\${size}x\${size}.png" alt="\${size}x\${size} icon">
+                        <h3>\${size}x\${size}</h3>
+                        <p>App Icon</p>
+                    \`;
+                    document.getElementById('icons-grid').appendChild(item);
+                    
+                    if (iconsFound === iconSizes.length) {
+                        document.getElementById('icons-status').innerHTML = '✅ App icons found!';
+                        document.getElementById('icons-status').className = 'status success';
+                    }
+                };
+                img.onerror = () => {
+                    const item = document.createElement('div');
+                    item.className = 'splash-item';
+                    item.innerHTML = \`
+                        <div style="background: #f0f0f0; height: 100px; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+                            <span style="color: #999;">Missing</span>
+                        </div>
+                        <h3>\${size}x\${size}</h3>
+                        <p>App Icon</p>
+                    \`;
+                    document.getElementById('icons-grid').appendChild(item);
+                };
+                img.src = \`icons/icon-\${size}x\${size}.png\`;
+            });
+        }
+
+        // Run the check when page loads
+        checkAssets();
+    </script>
+</body>
+</html>`;
+
+// Write the HTML viewer
+fs.writeFileSync('public/splash-viewer.html', htmlViewer);
+console.log('✅ Created splash screen viewer: public/splash-viewer.html');
+
+console.log('\n🎯 Next Steps:');
+console.log('1. Install ImageMagick: https://imagemagick.org/script/download.php#windows');
+console.log('2. Run: npm run generate-icons');
+console.log('3. Open: http://localhost:3000/splash-viewer.html');
+console.log('4. Or open: public/splash-viewer.html in your browser');
+console.log('\n📱 Alternative: Use online tools like RealFaviconGenerator.net');

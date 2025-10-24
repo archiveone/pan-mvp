@@ -1,0 +1,11 @@
+<svg width="96" height="96" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#000000"/>
+  
+  <!-- Pan Logo - Slightly left and up -->
+  <image href="pan logo finalL.png" 
+         x="16.320000000000004" 
+         y="16.320000000000004" 
+         width="57.599999999999994" 
+         height="57.599999999999994"
+         style="filter: invert(1);"/>
+</svg>

@@ -117,8 +117,9 @@ export default function SaveToFolderButton({ itemId, itemType = 'post', compact 
           setShowModal(true);
         }}
         className={`
+          star-button
           ${compact 
-            ? 'p-1.5 bg-white/70 hover:bg-white/90 backdrop-blur-sm' 
+            ? 'p-2 bg-black/70 hover:bg-black/90 backdrop-blur-sm' 
             : 'px-4 py-2 bg-white hover:bg-gray-50'
           }
           hover:shadow-md active:scale-95 transition-all rounded-full
@@ -134,10 +135,10 @@ export default function SaveToFolderButton({ itemId, itemType = 'post', compact 
         {!compact && <span className="text-gray-700">Save to Folder</span>}
       </button>
 
-      {/* Modal */}
+      {/* Modal - Fixed positioning to appear on top */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="save-modal" onClick={() => setShowModal(false)}>
+          <div className="save-modal-content" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div>

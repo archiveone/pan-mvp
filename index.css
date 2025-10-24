@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import mobile hover fix */
+@import './styles/mobile-hover-fix.css';
+
+/* Import header fixes */
+@import './styles/header-fixes.css';
+
 /* Custom CSS variables for the Pan theme */
 :root {
   --pan-black: #000000;
