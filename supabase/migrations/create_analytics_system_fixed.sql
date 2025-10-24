@@ -1,7 +1,7 @@
--- Create comprehensive analytics system
+-- Create analytics system - Fixed version
 -- Run this in your Supabase SQL Editor
 
--- ============= ANALYTICS EVENTS TABLE =============
+-- ============= STEP 1: CREATE ANALYTICS EVENTS TABLE =============
 
 -- Create analytics events table for detailed tracking
 CREATE TABLE IF NOT EXISTS analytics_events (
@@ -21,9 +21,8 @@ CREATE INDEX IF NOT EXISTS idx_analytics_events_content_id ON analytics_events(c
 CREATE INDEX IF NOT EXISTS idx_analytics_events_user_id ON analytics_events(user_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_event_type ON analytics_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_timestamp ON analytics_events(timestamp);
-CREATE INDEX IF NOT EXISTS idx_analytics_events_content_type ON analytics_events(content_id, event_type, timestamp);
 
--- ============= ANALYTICS COUNTERS =============
+-- ============= STEP 2: ADD CLICK COUNT TO POSTS =============
 
 -- Add click_count to posts table
 ALTER TABLE posts 
@@ -32,7 +31,7 @@ ALTER TABLE posts
 -- Create index for click_count
 CREATE INDEX IF NOT EXISTS idx_posts_click_count ON posts(click_count) WHERE click_count > 0;
 
--- ============= ANALYTICS FUNCTIONS =============
+-- ============= STEP 3: CREATE ANALYTICS FUNCTIONS =============
 
 -- Function to increment analytics counters
 CREATE OR REPLACE FUNCTION increment_analytics_counter(
@@ -135,30 +134,7 @@ BEGIN
          COALESCE(SUM(save_count), 0) + 
          COALESCE(SUM(click_count), 0)) / COUNT(*)
       ELSE 0 
-    END,
-    'top_content', (
-      SELECT json_agg(
-        json_build_object(
-          'content_id', id,
-          'title', title,
-          'content_type', content_type,
-          'view_count', COALESCE(view_count, 0),
-          'like_count', COALESCE(like_count, 0),
-          'comment_count', COALESCE(comment_count, 0),
-          'share_count', COALESCE(share_count, 0),
-          'download_count', COALESCE(download_count, 0),
-          'play_count', COALESCE(play_count, 0),
-          'save_count', COALESCE(save_count, 0),
-          'click_count', COALESCE(click_count, 0),
-          'created_at', created_at
-        )
-      )
-      FROM posts 
-      WHERE posts.user_id = get_user_analytics.user_id 
-        AND posts.created_at >= start_date
-      ORDER BY (COALESCE(view_count, 0) + COALESCE(like_count, 0) + COALESCE(comment_count, 0)) DESC
-      LIMIT 10
-    )
+    END
   ) INTO result
   FROM posts
   WHERE posts.user_id = get_user_analytics.user_id 
@@ -168,113 +144,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to get analytics dashboard data
-CREATE OR REPLACE FUNCTION get_analytics_dashboard(
-  user_id UUID,
-  days_back INTEGER DEFAULT 30
-)
-RETURNS JSON AS $$
-DECLARE
-  result JSON;
-  start_date TIMESTAMP WITH TIME ZONE;
-BEGIN
-  start_date := NOW() - INTERVAL '1 day' * days_back;
-  
-  SELECT json_build_object(
-    'summary', (
-      SELECT json_build_object(
-        'total_posts', COUNT(*),
-        'total_views', COALESCE(SUM(view_count), 0),
-        'total_likes', COALESCE(SUM(like_count), 0),
-        'total_comments', COALESCE(SUM(comment_count), 0),
-        'total_shares', COALESCE(SUM(share_count), 0),
-        'total_downloads', COALESCE(SUM(download_count), 0),
-        'total_plays', COALESCE(SUM(play_count), 0),
-        'total_saves', COALESCE(SUM(save_count), 0),
-        'total_clicks', COALESCE(SUM(click_count), 0),
-        'average_engagement', CASE 
-          WHEN COUNT(*) > 0 THEN 
-            (COALESCE(SUM(view_count), 0) + 
-             COALESCE(SUM(like_count), 0) + 
-             COALESCE(SUM(comment_count), 0) + 
-             COALESCE(SUM(share_count), 0) + 
-             COALESCE(SUM(download_count), 0) + 
-             COALESCE(SUM(play_count), 0) + 
-             COALESCE(SUM(save_count), 0) + 
-             COALESCE(SUM(click_count), 0)) / COUNT(*)
-          ELSE 0 
-        END
-      )
-      FROM posts
-      WHERE posts.user_id = get_analytics_dashboard.user_id 
-        AND posts.created_at >= start_date
-    ),
-    'top_posts', (
-      SELECT json_agg(
-        json_build_object(
-          'content_id', id,
-          'title', title,
-          'content_type', content_type,
-          'media_type', media_type,
-          'view_count', COALESCE(view_count, 0),
-          'like_count', COALESCE(like_count, 0),
-          'comment_count', COALESCE(comment_count, 0),
-          'share_count', COALESCE(share_count, 0),
-          'download_count', COALESCE(download_count, 0),
-          'play_count', COALESCE(play_count, 0),
-          'save_count', COALESCE(save_count, 0),
-          'click_count', COALESCE(click_count, 0),
-          'engagement_rate', (
-            COALESCE(view_count, 0) + 
-            COALESCE(like_count, 0) + 
-            COALESCE(comment_count, 0) + 
-            COALESCE(share_count, 0) + 
-            COALESCE(download_count, 0) + 
-            COALESCE(play_count, 0) + 
-            COALESCE(save_count, 0) + 
-            COALESCE(click_count, 0)
-          ),
-          'created_at', created_at
-        )
-      )
-      FROM posts 
-      WHERE posts.user_id = get_analytics_dashboard.user_id 
-        AND posts.created_at >= start_date
-      ORDER BY (COALESCE(view_count, 0) + COALESCE(like_count, 0) + COALESCE(comment_count, 0)) DESC
-      LIMIT 10
-    ),
-    'recent_events', (
-      SELECT COALESCE(
-        json_agg(
-          json_build_object(
-            'id', id,
-            'content_id', content_id,
-            'user_id', user_id,
-            'event_type', event_type,
-            'metadata', metadata,
-            'timestamp', timestamp
-          )
-        ), 
-        '[]'::json
-      )
-      FROM analytics_events
-      WHERE analytics_events.content_id IN (
-        SELECT id FROM posts WHERE posts.user_id = get_analytics_dashboard.user_id
-      )
-      AND analytics_events.timestamp >= start_date
-      ORDER BY timestamp DESC
-      LIMIT 50
-    )
-  ) INTO result
-  FROM posts
-  WHERE posts.user_id = get_analytics_dashboard.user_id 
-    AND posts.created_at >= start_date;
-  
-  RETURN result;
-END;
-$$ LANGUAGE plpgsql;
-
--- ============= RLS POLICIES =============
+-- ============= STEP 4: CREATE RLS POLICIES =============
 
 -- Enable RLS on analytics_events
 ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
@@ -290,7 +160,7 @@ CREATE POLICY "Users can view analytics for their own content" ON analytics_even
 CREATE POLICY "Users can insert analytics events" ON analytics_events
   FOR INSERT WITH CHECK (true);
 
--- ============= ANALYTICS VIEWS =============
+-- ============= STEP 5: CREATE ANALYTICS VIEW =============
 
 -- Create view for content performance
 CREATE OR REPLACE VIEW content_performance AS
