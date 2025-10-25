@@ -93,8 +93,8 @@ export default function SmartTagFilters({
           )}
         </div>
 
-        {/* Tag Pills - Single line on mobile */}
-        <div className="trending-tags flex gap-1.5 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
+        {/* Tag Pills - Horizontal scroll on mobile, wrap on desktop */}
+        <div className="trending-tags flex gap-1.5 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0 scrollbar-hide">
           {displayTags.map(({ tag, count }) => {
             const isSelected = localSelectedTags.includes(tag)
             return (
@@ -103,7 +103,7 @@ export default function SmartTagFilters({
                 onClick={() => handleTagClick(tag)}
                 className={`
                   px-2 py-1 rounded-full text-xs font-medium transition-all duration-200
-                  flex items-center gap-1
+                  flex items-center gap-1 whitespace-nowrap flex-shrink-0
                   ${isSelected
                     ? 'bg-gradient-to-r from-lime-400 to-lime-300 text-black shadow-sm scale-105'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -134,12 +134,12 @@ export default function SmartTagFilters({
             <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1.5">
               Similar:
             </p>
-            <div className="trending-tags flex gap-1.5 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
+            <div className="trending-tags flex gap-1.5 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0 scrollbar-hide">
               {relatedTags.map(({ tag, count }) => (
                 <button
                   key={tag}
                   onClick={() => handleTagClick(tag)}
-                  className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                  className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors whitespace-nowrap flex-shrink-0"
                 >
                   #{tag} ({count})
                 </button>

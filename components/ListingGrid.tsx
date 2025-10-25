@@ -45,8 +45,35 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const [zoomLevel, setZoomLevel] = useState(3) // 1 (largest) to 6 (smallest)
   const [showZoomIndicator, setShowZoomIndicator] = useState(false)
+  const [mobileTappedId, setMobileTappedId] = useState<string | null>(null)
+  const [tapTimeout, setTapTimeout] = useState<NodeJS.Timeout | null>(null)
   const { isSaved, toggleSave } = useSavedPosts()
   const { user } = useAuth()
+  
+  // Mobile tap handling - one tap to show info, double tap to navigate
+  const handleMobileTap = (listingId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    // Clear any existing timeout
+    if (tapTimeout) {
+      clearTimeout(tapTimeout)
+    }
+    
+    if (mobileTappedId === listingId) {
+      // Double tap - navigate to listing
+      setMobileTappedId(null)
+      handleListingClick(listingId)
+      window.location.href = `/listing/${listingId}`
+    } else {
+      // First tap - show info
+      setMobileTappedId(listingId)
+      const timeout = setTimeout(() => {
+        setMobileTappedId(null)
+      }, 2000) // Auto-hide after 2 seconds
+      setTapTimeout(timeout)
+    }
+  }
   
   // Track view when user clicks on a listing
   const handleListingClick = (listingId: string) => {
@@ -225,6 +252,12 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
             className="relative aspect-square overflow-hidden group"
             onMouseEnter={() => setHoveredId(listing.id)}
             onMouseLeave={() => setHoveredId(null)}
+            onClick={(e) => {
+              // On mobile, use tap system; on desktop, use hover
+              if (window.innerWidth < 768) {
+                handleMobileTap(listing.id, e)
+              }
+            }}
           >
             <Link
               href={
@@ -237,7 +270,15 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
                 `/listing/${listing.id}`
               }
               className="absolute inset-0 cursor-pointer block"
-              onClick={() => handleListingClick(listing.id)}
+              onClick={(e) => {
+                // On desktop, navigate immediately
+                if (window.innerWidth >= 768) {
+                  handleListingClick(listing.id)
+                } else {
+                  // On mobile, prevent default navigation (handled by tap system)
+                  e.preventDefault()
+                }
+              }}
             >
             {/* Main Media (Image, Video, or Audio) */}
             <div className="absolute inset-0">
@@ -347,9 +388,12 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
 
             {/* Content Type Badge - REMOVED per user request */}
 
-            {/* Hover Information Bar (Desktop) / Always Show on Mobile */}
-            <div className={`absolute bottom-0 left-0 right-0 h-24 sm:h-28 bg-black/85 backdrop-blur-sm text-white p-2 sm:p-3 transition-all duration-300 flex flex-col ${
-              isHovered ? 'translate-y-0 opacity-100' : 'sm:translate-y-full sm:opacity-0 translate-y-0 opacity-100'
+            {/* Hover Information Bar (Desktop) / Tap to Show on Mobile */}
+            <div className={`absolute bottom-0 left-0 right-0 h-20 sm:h-28 bg-black/85 backdrop-blur-sm text-white p-2 sm:p-3 transition-all duration-300 flex flex-col ${
+              // On mobile, show only when tapped; on desktop, show on hover
+              (window.innerWidth < 768 ? mobileTappedId === listing.id : isHovered) 
+                ? 'translate-y-0 opacity-100' 
+                : 'sm:translate-y-full sm:opacity-0 translate-y-full opacity-0'
             }`}>
               {/* Title Section */}
               <div className="mb-1 sm:mb-2">
@@ -361,7 +405,7 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
                 <div className="flex items-center gap-0.5 sm:gap-1 text-green-400">
                   {listing.price && (
                     <>
-                      <DollarSign className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      <DollarSign className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
                       <span className="text-[10px] sm:text-xs font-semibold">
                         {listing.price}
                       </span>
@@ -372,7 +416,7 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
                 <div className="flex items-center gap-0.5 sm:gap-1 text-gray-300">
                   {listing.location && (
                     <>
-                      <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                      <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
                       <span className="text-[9px] sm:text-[11px] truncate max-w-[80px] sm:max-w-[120px]">{listing.location}</span>
                     </>
                   )}
@@ -390,12 +434,12 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
                   }}
                   className="flex items-center gap-1 sm:gap-1.5 hover:bg-white/10 rounded-lg px-0.5 sm:px-1 py-0.5 -ml-1 transition-colors cursor-pointer"
                 >
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-600 flex items-center justify-center overflow-hidden">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-600 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {listing.profiles?.avatar_url ? (
                       <img
                         src={listing.profiles.avatar_url}
                         alt={listing.profiles?.username || listing.profiles?.name || 'User'}
-                        className="w-6 h-6 rounded-full object-cover"
+                        className="w-full h-full rounded-full object-cover"
                         onError={(e) => {
                           console.warn('Failed to load avatar:', listing.profiles?.avatar_url)
                           e.currentTarget.style.display = 'none'
@@ -408,7 +452,7 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
                         }}
                       />
                     ) : (
-                      <User className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
                     )}
                   </div>
                   <span className="text-[9px] sm:text-[11px] font-medium text-gray-200 truncate max-w-[60px] sm:max-w-[100px]">
@@ -418,7 +462,7 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
                 
                 {/* Date */}
                 <div className="flex items-center gap-0.5 text-gray-400">
-                  <Calendar className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                  <Calendar className="w-2 h-2 sm:w-2.5 sm:h-2.5 flex-shrink-0" />
                   <span className="text-[8px] sm:text-[10px]">
                     {new Date(listing.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
@@ -436,7 +480,7 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
               e.preventDefault()
               e.stopPropagation()
             }}
-            className="absolute top-2 right-2 sm:top-3 sm:right-3 z-30"
+            className="absolute top-2 right-2 sm:top-3 sm:right-3 z-30 flex items-center justify-center"
           >
             <SaveToFolderButton 
               itemId={listing.id} 

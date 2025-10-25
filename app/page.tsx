@@ -196,7 +196,7 @@ export default function Home() {
       <StoriesBar />
 
       {/* Content */}
-      <main className="px-3 sm:px-4 py-4 sm:py-6 pb-24 sm:pb-20">
+      <main className="px-3 sm:px-4 py-4 sm:py-6 pb-24 sm:pb-20 mobile-grid-fix">
         <div className="max-w-6xl mx-auto">
           {/* Error State */}
           {error && (

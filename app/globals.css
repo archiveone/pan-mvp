@@ -95,6 +95,62 @@ body {
   color: rgb(243, 244, 246);
 }
 
+/* Fix header positioning and mobile issues */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: white;
+  border-bottom: 1px solid rgb(229, 231, 235);
+}
+
+.dark .app-header {
+  background-color: rgb(17, 24, 39);
+  border-bottom-color: rgb(55, 65, 81);
+}
+
+/* Ensure proper mobile spacing */
+@media (max-width: 640px) {
+  .app-header {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  
+  /* Fix mobile grid spacing */
+  .mobile-grid-fix {
+    margin-top: 0;
+    padding-top: 0;
+  }
+  
+  /* Ensure icons are properly sized on mobile */
+  .mobile-icon-fix {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  
+  /* Fix button centering on mobile */
+  .mobile-button-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Trending tags mobile scrolling */
+  .trending-tags {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .trending-tags::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .trending-tags {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 /* Background colors */
 .dark .bg-white {
   background-color: rgb(31, 41, 55);

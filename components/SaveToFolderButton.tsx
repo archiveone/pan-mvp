@@ -123,7 +123,7 @@ export default function SaveToFolderButton({ itemId, itemType = 'post', compact 
             : 'px-4 py-2 bg-white hover:bg-gray-50'
           }
           hover:shadow-md active:scale-95 transition-all rounded-full
-          flex items-center gap-2 font-medium
+          flex items-center justify-center gap-2 font-medium
         `}
         title="Save to folder"
       >
@@ -138,13 +138,11 @@ export default function SaveToFolderButton({ itemId, itemType = 'post', compact 
       {/* Modal - Fixed positioning to appear on top */}
       {showModal && (
         <div 
-          className="save-modal" 
-          style={{ zIndex: 999999 }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" 
           onClick={() => setShowModal(false)}
         >
           <div 
-            className="save-modal-content" 
-            style={{ zIndex: 1000000 }}
+            className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden" 
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
