@@ -62,7 +62,7 @@ export class AdvancedAnalyticsService {
       const { data: result, error } = await supabase
         .from('stream_analytics')
         .insert({
-          content_id: data.contentId,
+          post_id: data.contentId,
           user_id: data.userId,
           session_id: data.sessionId,
           started_at: data.startedAt.toISOString(),
@@ -141,7 +141,7 @@ export class AdvancedAnalyticsService {
         .from('sales_analytics')
         .insert({
           transaction_id: data.transactionId,
-          content_id: data.contentId,
+          post_id: data.contentId,
           seller_id: data.sellerId,
           buyer_id: data.buyerId,
           gross_amount: data.grossAmount,
@@ -251,20 +251,16 @@ export class AdvancedAnalyticsService {
       const { data: result, error } = await supabase
         .from('view_analytics')
         .insert({
-          content_id: data.contentId,
+          post_id: data.contentId,
           user_id: data.userId,
           session_id: data.sessionId,
-          view_duration_seconds: data.viewDurationSeconds || 0,
-          scroll_depth_percentage: data.scrollDepthPercentage || 0,
-          clicked_cta: data.clickedCta || false,
+          view_duration: data.viewDurationSeconds || 0,
           shared: data.shared || false,
           saved: data.saved || false,
           liked: data.liked || false,
           device_type: data.deviceType,
           referrer: data.referrer,
-          country: data.location?.country,
-          city: data.location?.city,
-          region: data.location?.region,
+          country_code: data.location?.country,
         });
 
       if (error) {
