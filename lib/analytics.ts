@@ -141,7 +141,7 @@ export class PerformanceMonitoring {
       
       Analytics.trackEvent('page_load_time', {
         load_time: pageLoadTime,
-        page: window.location.pathname,
+        page: typeof window !== 'undefined' ? window.location.pathname : '/',
       })
     })
   }
