@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+
+// Disable static generation for this page to avoid SSR issues
+export const dynamic = 'force-dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useThemePreferences } from '@/contexts/ThemePreferencesContext';
