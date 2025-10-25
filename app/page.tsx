@@ -235,7 +235,11 @@ export default function Home() {
                 {isSupabaseConfigured() && (
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button
-                      onClick={() => window.location.href = '/create'}
+                      onClick={() => {
+                        if (typeof window !== 'undefined') {
+                          window.location.href = '/create'
+                        }
+                      }}
                       className="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors font-medium"
                     >
                       Create Content

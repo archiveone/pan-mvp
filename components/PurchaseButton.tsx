@@ -25,7 +25,7 @@ export default function PurchaseButton({ post, className = '', onSuccess }: Purc
 
   const handlePurchase = async () => {
     if (!user) {
-      router.push('/login?redirect=' + window.location.pathname);
+      router.push('/login?redirect=' + (typeof window !== 'undefined' ? window.location.pathname : '/'));
       return;
     }
 

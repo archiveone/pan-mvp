@@ -173,7 +173,9 @@ export default function SaveToFolderButton({ itemId, itemType = 'post', compact 
                   <button
                     onClick={() => {
                       setShowModal(false);
-                      window.location.href = '/hub';
+                      if (typeof window !== 'undefined') {
+                        window.location.href = '/hub';
+                      }
                     }}
                     className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium"
                   >

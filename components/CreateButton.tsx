@@ -71,7 +71,9 @@ export default function CreateButton({
           console.log('Content created successfully:', contentId)
           setShowWizard(false)
           // Refresh the page to show new content
-          window.location.reload()
+          if (typeof window !== 'undefined') {
+            window.location.reload()
+          }
         }}
       />
     </>

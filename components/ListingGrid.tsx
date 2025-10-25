@@ -64,7 +64,9 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
       // Double tap - navigate to listing
       setMobileTappedId(null)
       handleListingClick(listingId)
-      window.location.href = `/listing/${listingId}`
+      if (typeof window !== 'undefined') {
+        window.location.href = `/listing/${listingId}`
+      }
     } else {
       // First tap - show info
       setMobileTappedId(listingId)
@@ -430,7 +432,9 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    window.location.href = `/profile/${listing.user_id}`
+                    if (typeof window !== 'undefined') {
+                      window.location.href = `/profile/${listing.user_id}`
+                    }
                   }}
                   className="flex items-center gap-1 sm:gap-1.5 hover:bg-white/10 rounded-lg px-0.5 sm:px-1 py-0.5 -ml-1 transition-colors cursor-pointer"
                 >

@@ -462,7 +462,11 @@ export default function AnalyticsPage() {
               You haven't created any content yet, or there's no data for the selected time range.
             </p>
             <button
-              onClick={() => window.location.href = '/create'}
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.location.href = '/create'
+                }
+              }}
               className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
             >
               Create Content

@@ -198,7 +198,9 @@ const ListingCard: React.FC<{ listing: Listing }> = ({ listing }) => {
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            window.location.href = `/listing/${listing.id}`;
+            if (typeof window !== 'undefined') {
+              window.location.href = `/listing/${listing.id}`;
+            }
           }}
           className="bg-white bg-opacity-90 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-opacity-100 transition-colors"
         >
