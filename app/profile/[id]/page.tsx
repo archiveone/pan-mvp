@@ -232,7 +232,7 @@ export default function UserProfilePage() {
           <span>Back</span>
         </button>
 
-        {/* Profile Header - Matches hub profile box exactly */}
+        {/* Profile Header - Mobile Optimized */}
         <div 
           className="rounded-2xl shadow-lg overflow-hidden relative border"
           style={{
@@ -250,32 +250,41 @@ export default function UserProfilePage() {
           )}
           
           <div className="relative z-10 h-full flex flex-col p-6">
-            {/* Top: Edit Button / Follow Button */}
-            <div className="flex justify-end mb-auto">
+            {/* Top: Edit Button / Follow & Message Buttons - Mobile Stacked */}
+            <div className="flex flex-col sm:flex-row justify-end mb-auto gap-1 sm:gap-2">
               {isOwnProfile ? (
                 <Link
                   href="/hub"
-                  className="px-4 py-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-lg hover:bg-white dark:hover:bg-gray-900 transition-colors text-sm font-medium text-gray-900 dark:text-gray-100 shadow-lg flex items-center gap-2"
+                  className="px-2 py-1 sm:px-3 sm:py-1.5 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-lg hover:bg-white dark:hover:bg-gray-900 transition-colors text-xs font-medium text-gray-900 dark:text-gray-100 shadow-lg flex items-center gap-1 sm:gap-1.5"
                 >
-                  <Settings size={16} />
-                  Edit Profile
+                  <Settings size={12} className="sm:w-3.5 sm:h-3.5" />
+                  <span className="hidden sm:inline">Edit</span>
                 </Link>
               ) : (
-                <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-lg shadow-lg">
-                  <FollowButton
-                    userId={params?.id as string}
-                    initialIsFollowing={followerStats.is_following}
-                    onFollowChange={handleFollowChange}
-                  />
-                </div>
+                <>
+                  <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-lg shadow-lg">
+                    <FollowButton
+                      userId={params?.id as string}
+                      initialIsFollowing={followerStats.is_following}
+                      onFollowChange={handleFollowChange}
+                    />
+                  </div>
+                  <Link
+                    href="/inbox"
+                    className="px-2 py-1 sm:px-3 sm:py-1.5 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-lg hover:bg-white dark:hover:bg-gray-900 transition-colors text-xs font-medium text-gray-900 dark:text-gray-100 shadow-lg flex items-center gap-1 sm:gap-1.5"
+                  >
+                    <MessageCircle size={12} className="sm:w-3.5 sm:h-3.5" />
+                    <span className="hidden sm:inline">Message</span>
+                  </Link>
+                </>
               )}
             </div>
 
-            {/* Bottom: Profile Info */}
-            <div className="flex items-end justify-between">
-              <div className="flex items-start gap-4">
+            {/* Bottom: Profile Info - Mobile Optimized */}
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+              <div className="flex items-start gap-3 sm:gap-4">
                 {/* Avatar - Left Side */}
-                <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 shadow-2xl bg-gray-200 dark:bg-gray-700">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 shadow-2xl bg-gray-200 dark:bg-gray-700">
                   {profile.avatar_url ? (
                     <img
                       src={profile.avatar_url}
@@ -289,13 +298,13 @@ export default function UserProfilePage() {
                   )}
                 </div>
                 
-                {/* Info - Name, Username, Bio */}
-                <div className="flex-1 space-y-2">
-                  <h1 className="inline bg-black/80 backdrop-blur-sm text-2xl font-bold text-white leading-none">
+                {/* Info - Name, Username, Bio - Mobile Optimized */}
+                <div className="flex-1 space-y-1 sm:space-y-2">
+                  <h1 className="inline bg-black/80 backdrop-blur-sm text-xl sm:text-2xl font-bold text-white leading-none">
                     {profile.name || 'User'}
                   </h1>
                   <br />
-                  <p className="inline bg-black/80 backdrop-blur-sm text-base text-white/90 leading-none">
+                  <p className="inline bg-black/80 backdrop-blur-sm text-sm sm:text-base text-white/90 leading-none">
                     @{profile.username || 'user'}
                   </p>
                   {profile.bio && (
@@ -309,20 +318,9 @@ export default function UserProfilePage() {
                 </div>
               </div>
 
-              {/* Stats & Actions - Bottom Right */}
-              <div className="flex flex-col items-end gap-2">
-                {/* Message Button - Above Stats (for other profiles) */}
-                {!isOwnProfile && (
-                  <Link
-                    href="/inbox"
-                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-colors text-sm font-medium text-white shadow-lg flex items-center gap-2 border border-white/30"
-                  >
-                    <MessageCircle size={16} />
-                    Message
-                  </Link>
-                )}
-                
-                <div className="flex items-center gap-2 flex-wrap">
+              {/* Stats - Mobile Optimized */}
+              <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center sm:justify-end">
                   <div className="inline-flex items-center gap-1.5 bg-black/90 backdrop-blur-sm text-white px-2 py-1 shadow-lg">
                     <span className="text-base font-bold leading-none">{userPosts.length}</span>
                     <span className="text-xs opacity-90 leading-none font-medium">Posts</span>

@@ -25,7 +25,7 @@ export default function AppHeader() {
                 <img 
                   src="/pan logo finalL.png" 
                   alt="Pan Logo" 
-                  className="logo h-12 sm:h-14 hover:opacity-80 transition-opacity object-contain mix-blend-multiply dark:invert dark:mix-blend-screen"
+                  className="logo h-8 sm:h-10 hover:opacity-80 transition-opacity object-contain mix-blend-multiply dark:invert dark:mix-blend-screen"
                 />
               </div>
             </Link>

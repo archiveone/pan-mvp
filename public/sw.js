@@ -5,13 +5,8 @@ const RUNTIME_CACHE = 'pan-runtime';
 // Assets to cache on install
 const PRECACHE_URLS = [
   '/',
-  '/hub',
-  '/inbox',
-  '/profile',
   '/offline',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/manifest.json'
 ];
 
 // Install event - cache critical assets
