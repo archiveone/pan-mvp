@@ -469,7 +469,11 @@ export default function CommentSection({ contentId, contentType = 'post' }: Comm
         <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
           <p className="text-gray-600 dark:text-gray-400 mb-3">Sign in to leave a comment</p>
           <button
-            onClick={() => window.location.href = '/'}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.location.href = '/'
+              }
+            }}
             className="px-6 py-2 bg-gradient-to-r from-lime-400 to-lime-300 text-black rounded-lg hover:brightness-95 transition-all"
           >
             Sign In

@@ -66,7 +66,11 @@ export default function OfflinePage() {
               Check your internet connection and try again
             </p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.location.reload()
+                }
+              }}
               className="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
             >
               Try Again

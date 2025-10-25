@@ -55,7 +55,11 @@ export default function Error({
           </button>
 
           <button
-            onClick={() => window.location.href = '/'}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.location.href = '/'
+              }
+            }}
             className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
           >
             <Home className="w-5 h-5" />

@@ -75,10 +75,12 @@ export default function ListingDetailPage() {
       navigator.share({
         title: listing?.title,
         text: listing?.content,
-        url: window.location.href
+        url: typeof window !== 'undefined' ? window.location.href : ''
       })
     } else {
-      navigator.clipboard.writeText(window.location.href)
+      if (typeof window !== 'undefined') {
+        navigator.clipboard.writeText(window.location.href)
+      }
       alert('Link copied to clipboard!')
     }
   }
