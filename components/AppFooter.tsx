@@ -1,6 +1,22 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
+import { useAuth } from '@/contexts/AuthContext'
+import UnifiedContentCreator from './UnifiedContentCreator'
 
 export default function AppFooter() {
+  const { user } = useAuth()
+  const [showSellModal, setShowSellModal] = useState(false)
+
+  const handleSellClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!user) {
+      alert('Please sign in to sell something')
+      return
+    }
+    setShowSellModal(true)
+  }
   return (
     <footer className="bg-gray-50 border-t border-gray-200 mt-16">
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -34,9 +50,9 @@ export default function AppFooter() {
               <Link href="/dashboard" className="block text-gray-600 hover:text-black transition-colors text-sm">
                 My Dashboard
               </Link>
-              <Link href="/create-listing" className="block text-gray-600 hover:text-black transition-colors text-sm">
+              <button onClick={handleSellClick} className="block text-gray-600 hover:text-black transition-colors text-sm text-left">
                 Sell Something
-              </Link>
+              </button>
               <Link href="/messages" className="block text-gray-600 hover:text-black transition-colors text-sm">
                 Messages
               </Link>
@@ -50,22 +66,16 @@ export default function AppFooter() {
           <div className="text-center md:text-left">
             <h3 className="font-semibold text-gray-900 mb-4">Support & Legal</h3>
             <div className="space-y-2">
-              <Link href="#" className="block text-gray-600 hover:text-black transition-colors text-sm">
-                How it works
-              </Link>
-              <Link href="#" className="block text-gray-600 hover:text-black transition-colors text-sm">
-                Safety tips
-              </Link>
-              <Link href="#" className="block text-gray-600 hover:text-black transition-colors text-sm">
+              <Link href="/support" className="block text-gray-600 hover:text-black transition-colors text-sm">
                 Help center
               </Link>
-              <Link href="#" className="block text-gray-600 hover:text-black transition-colors text-sm">
+              <Link href="/support" className="block text-gray-600 hover:text-black transition-colors text-sm">
                 Contact us
               </Link>
-              <Link href="#" className="block text-gray-600 hover:text-black transition-colors text-sm">
+              <Link href="/legal/terms" className="block text-gray-600 hover:text-black transition-colors text-sm">
                 Terms of Service
               </Link>
-              <Link href="#" className="block text-gray-600 hover:text-black transition-colors text-sm">
+              <Link href="/legal/privacy" className="block text-gray-600 hover:text-black transition-colors text-sm">
                 Privacy Policy
               </Link>
             </div>
@@ -79,6 +89,20 @@ export default function AppFooter() {
           </p>
         </div>
       </div>
+
+      {/* Sell Something Modal */}
+      <UnifiedContentCreator
+        isOpen={showSellModal}
+        onClose={() => setShowSellModal(false)}
+        onSuccess={(contentId) => {
+          console.log('Item listed successfully:', contentId)
+          setShowSellModal(false)
+          // Refresh the page to show new content
+          if (typeof window !== 'undefined') {
+            window.location.reload()
+          }
+        }}
+      />
     </footer>
   )
 }

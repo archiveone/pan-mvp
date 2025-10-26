@@ -180,12 +180,12 @@ export default function ModularDashboardPage() {
         engagementData,
         analyticsEvents,
       ] = await Promise.all([
-        supabase.from('view_analytics').select('*').in('content_id', contentIds),
-        supabase.from('stream_analytics').select('*').in('content_id', contentIds),
+        supabase.from('view_analytics').select('*').in('post_id', contentIds),
+        supabase.from('stream_analytics').select('*').in('post_id', contentIds),
         supabase.from('sales_analytics').select('*').eq('seller_id', user.id),
-        supabase.from('conversion_analytics').select('*').in('content_id', contentIds),
+        supabase.from('conversion_analytics').select('*').in('post_id', contentIds),
         supabase.from('engagement_scores').select('*').eq('user_id', user.id),
-        supabase.from('analytics_events').select('*').in('content_id', contentIds),
+        supabase.from('analytics_events').select('*').in('post_id', contentIds),
       ]);
 
       console.log('📊 Analytics data loaded:');
@@ -647,7 +647,7 @@ function WidgetContent({
       // Real top content by views
       const postViews = posts.map((p: any) => ({
         ...p,
-        viewCount: views.filter((v: any) => v.content_id === p.id).length,
+        viewCount: views.filter((v: any) => v.post_id === p.id).length,
       })).sort((a: any, b: any) => b.viewCount - a.viewCount).slice(0, 3);
 
       return (

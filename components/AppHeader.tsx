@@ -17,7 +17,7 @@ export default function AppHeader() {
   return (
     <>
       <header className="app-header sticky top-0 bg-white dark:bg-gray-900 z-50 border-b border-gray-200 dark:border-gray-800 safe-area-top">
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1 sm:py-1.5">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1 sm:py-1.5" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)' }}>
           {/* Pan Logo - Vertically centered */}
           <div className="flex items-center justify-center h-8 sm:h-10">
             <Link href="/" className="inline-block">
@@ -25,7 +25,8 @@ export default function AppHeader() {
                 <img 
                   src="/pan logo finalL.png" 
                   alt="Pan Logo" 
-                  className="logo h-8 sm:h-10 hover:opacity-80 transition-opacity object-contain mix-blend-multiply dark:invert dark:mix-blend-screen"
+                  className="logo h-6 sm:h-8 hover:opacity-80 transition-opacity object-cover object-center mix-blend-multiply dark:invert dark:mix-blend-screen"
+                  style={{ objectPosition: 'center 20%' }}
                 />
               </div>
             </Link>

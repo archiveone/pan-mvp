@@ -484,7 +484,7 @@ export default function ListingGrid({ listings, loading }: ListingGridProps) {
               e.preventDefault()
               e.stopPropagation()
             }}
-            className="absolute top-2 right-2 sm:top-3 sm:right-3 z-30 flex items-center justify-center"
+            className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 flex items-center justify-center"
           >
             <SaveToFolderButton 
               itemId={listing.id} 

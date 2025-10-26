@@ -464,7 +464,7 @@ export default function InboxPage() {
             <div className="grid grid-cols-12 h-full">
             
             {/* Left Sidebar - Conversations List */}
-            <div className="col-span-12 md:col-span-4 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+            <div className={`${selectedConversation ? 'hidden md:flex' : 'flex'} col-span-12 md:col-span-4 border-r border-gray-200 dark:border-gray-700 flex-col`}>
               {/* Header */}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <div className="flex items-center justify-between mb-3">
@@ -647,7 +647,7 @@ export default function InboxPage() {
             </div>
 
             {/* Right Side - Messages */}
-            <div className="col-span-12 md:col-span-8 flex flex-col">
+            <div className={`${selectedConversation ? 'flex' : 'hidden md:flex'} col-span-12 md:col-span-8 flex-col`}>
               {selectedConversation && otherUser ? (
                 <>
                   {/* Chat Header */}

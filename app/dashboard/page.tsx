@@ -164,12 +164,12 @@ export default function DashboardPage() {
     
     // Fetch ALL analytics data from ALL tables
     const [viewData, streamData, salesData, conversionData, engagementData, analyticsEvents] = await Promise.all([
-      supabase.from('view_analytics').select('*').in('content_id', contentIds).gte('viewed_at', startDate.toISOString()),
-      supabase.from('stream_analytics').select('*').in('content_id', contentIds).gte('started_at', startDate.toISOString()),
+      supabase.from('view_analytics').select('*').in('post_id', contentIds).gte('viewed_at', startDate.toISOString()),
+      supabase.from('stream_analytics').select('*').in('post_id', contentIds).gte('started_at', startDate.toISOString()),
       supabase.from('sales_analytics').select('*').eq('seller_id', userId).gte('sale_date', startDate.toISOString()),
-      supabase.from('conversion_analytics').select('*').in('content_id', contentIds),
+      supabase.from('conversion_analytics').select('*').in('post_id', contentIds),
       supabase.from('engagement_scores').select('*').eq('user_id', userId),
-      supabase.from('analytics_events').select('*').in('content_id', contentIds).gte('created_at', startDate.toISOString()),
+      supabase.from('analytics_events').select('*').in('post_id', contentIds).gte('created_at', startDate.toISOString()),
     ]);
 
     console.log('📊 Analytics loaded:');

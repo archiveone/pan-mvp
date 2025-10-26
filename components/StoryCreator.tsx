@@ -107,7 +107,20 @@ const StoryCreator: React.FC<StoryCreatorProps> = ({ isOpen, onClose, onStoryCre
         audio: false
       };
       
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      // Try with fallback constraints for mobile
+      let mediaStream;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (error) {
+        console.log('⚠️ Primary constraints failed, trying fallback...');
+        // Fallback with more basic constraints
+        const fallbackConstraints = {
+          video: true,
+          audio: false
+        };
+        mediaStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+      }
+      
       console.log('✅ Camera permission granted');
       
       if (videoRef.current) {
